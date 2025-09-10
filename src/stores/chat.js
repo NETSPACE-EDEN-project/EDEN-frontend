@@ -37,6 +37,10 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = messageList
   }
 
+  const prependMessages = (messageList) => {
+    messages.value = [...messageList, ...messages.value]
+  }
+
   const addMessage = (message) => {
     messages.value.push(message)
   }
@@ -92,6 +96,7 @@ export const useChatStore = defineStore('chat', () => {
     setChatList,
     setCurrentRoom,
     setMessages,
+    prependMessages,
     addMessage,
     setOnlineUsers,
     addTypingUser,

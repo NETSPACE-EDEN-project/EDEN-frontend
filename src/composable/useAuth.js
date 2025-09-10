@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2'
-import { useAuthStore } from '../stores/authStore.js'
+import { useAuthStore } from '../stores/auth.js'
 import { authService } from '../services/authService.js'
 
 export function useAuth() {
