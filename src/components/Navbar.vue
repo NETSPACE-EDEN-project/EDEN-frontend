@@ -55,11 +55,11 @@ const handleMobileLogout = async () => {
 
           <!-- 未登入用戶 -->
           <div class="flex items-center space-x-4">
-            <router-link to="/login" class="font-medium text-gray-600 hover:text-blue-600">
+            <router-link to="/auth" class="font-medium text-gray-600 hover:text-blue-600">
               登入
             </router-link>
             <router-link
-              to="/register"
+              to="/auth"
               class="px-4 py-2 text-white bg-blue-400 rounded hover:bg-blue-500"
             >
               註冊
@@ -122,14 +122,14 @@ const handleMobileLogout = async () => {
           <!-- 未登入手機選單 -->
           <div class="space-y-3">
             <router-link
-              to="/login"
+              to="/auth"
               class="block px-2 py-1 text-gray-600 hover:text-blue-600"
               @click="mobileMenuOpen = false"
             >
               登入
             </router-link>
             <router-link
-              to="/register"
+              to="/auth"
               class="block px-2 py-1 font-medium text-blue-600 hover:text-blue-800"
               @click="mobileMenuOpen = false"
             >

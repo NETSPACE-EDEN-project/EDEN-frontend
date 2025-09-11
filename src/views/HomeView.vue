@@ -21,7 +21,7 @@ const { isAuthenticated, userName } = useAuth()
     <div class="flex flex-col gap-4 mb-8 sm:flex-row">
       <router-link
         v-if="!isAuthenticated"
-        to="/login"
+        to="/auth"
         class="px-8 py-3 font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700"
       >
         開始聊天
@@ -35,7 +35,7 @@ const { isAuthenticated, userName } = useAuth()
       </router-link>
       <router-link
         v-if="!isAuthenticated"
-        to="/register"
+        to="/auth"
         class="px-8 py-3 font-medium text-center text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white"
       >
         註冊帳號

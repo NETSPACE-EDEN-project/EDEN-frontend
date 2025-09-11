@@ -13,7 +13,7 @@ const authStore = useAuthStore()
 const { verifyAuthStatus } = useAuth()
 
 const showNavigation = computed(() => {
-  const hideNavRoutes = ['/login', '/register']
+  const hideNavRoutes = ['/auth']
   return !hideNavRoutes.includes(route.path)
 })
 
@@ -27,6 +27,11 @@ const initializeApp = async () => {
     authStore.setLoading(false)
   }
 }
+
+const mainClass = computed(() => {
+  const noPaddingRoutes = ['/auth']
+  return noPaddingRoutes.includes(route.path) ? '' : 'pt-16'
+})
 
 onMounted(() => {
   initializeApp()
@@ -45,7 +50,7 @@ onMounted(() => {
     <Navbar v-if="showNavigation" class="fixed top-0 left-0 z-20 w-full" />
 
     <!-- 路由內容 -->
-    <main class="pt-16">
+    <main :class="mainClass">
       <router-view />
     </main>
 
