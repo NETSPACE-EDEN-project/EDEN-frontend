@@ -5,21 +5,26 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
 import { useAuth } from './composables/useAuth.js'
 
-import LoadingOverlay from './components/LoadingOverlay.vue'
 import Navbar from './components/Navbar.vue'
+import LoadingOverlay from './components/LoadingOverlay.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const { verifyAuthStatus } = useAuth()
 
 const showNavigation = computed(() => {
-  const hideNavRoutes = ['/auth']
+  const hideNavRoutes = ['/auth', '/login', '/register']
   return !hideNavRoutes.includes(route.path)
 })
 
+const mainClass = computed(() => {
+  const noPaddingRoutes = ['/auth', '/login', '/register']
+  return noPaddingRoutes.includes(route.path) ? '' : 'pt-16'
+})
+
 const initializeApp = async () => {
+  authStore.setLoading(true)
   try {
-    authStore.setLoading(true)
     await verifyAuthStatus()
   } catch (error) {
     console.error('初始化失敗:', error)
@@ -27,11 +32,6 @@ const initializeApp = async () => {
     authStore.setLoading(false)
   }
 }
-
-const mainClass = computed(() => {
-  const noPaddingRoutes = ['/auth']
-  return noPaddingRoutes.includes(route.path) ? '' : 'pt-16'
-})
 
 onMounted(() => {
   initializeApp()

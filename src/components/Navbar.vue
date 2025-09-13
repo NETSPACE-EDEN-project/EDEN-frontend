@@ -54,7 +54,7 @@ const handleMobileLogout = async () => {
           </div>
 
           <!-- 未登入用戶 -->
-          <div class="flex items-center space-x-4">
+          <div v-else class="flex items-center space-x-4">
             <router-link to="/auth" class="font-medium text-gray-600 hover:text-blue-600">
               登入
             </router-link>
@@ -120,7 +120,7 @@ const handleMobileLogout = async () => {
           </div>
 
           <!-- 未登入手機選單 -->
-          <div class="space-y-3">
+          <div v-else class="space-y-3">
             <router-link
               to="/auth"
               class="block px-2 py-1 text-gray-600 hover:text-blue-600"

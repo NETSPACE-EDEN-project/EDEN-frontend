@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import LoginForm from '../components/auth/LoginForm.vue'
+import SignUpForm from '../components/auth/SignUpForm.vue'
+
 const route = useRoute()
 const router = useRouter()
 
