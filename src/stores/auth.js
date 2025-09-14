@@ -5,6 +5,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const isLoading = ref(false)
   const error = ref(null)
+  const isLoggedOut = ref(false)
 
   const getCookie = (name) => {
     const value = `; ${document.cookie}`
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => {
+    if (isLoggedOut.value) return false
     if (user.value) return true
 
     const cookieUser = getUserFromCookie()
@@ -72,6 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setUser = (userData) => {
     user.value = userData
+    isLoggedOut.value = false
   }
 
   const clearError = () => {
@@ -81,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
   const clearAuth = () => {
     user.value = null
     clearError()
+    isLoggedOut.value = true
     clearAuthCookies()
   }
 
