@@ -25,7 +25,11 @@ const mainClass = computed(() => {
 const initializeApp = async () => {
   authStore.setLoading(true)
   try {
-    await verifyAuthStatus()
+    authStore.initializeAuth()
+
+    if (authStore.isAuthenticated) {
+      await verifyAuthStatus()
+    }
   } catch (error) {
     console.error('初始化失敗:', error)
   } finally {

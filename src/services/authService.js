@@ -30,4 +30,10 @@ export const authService = {
 
     return res.data
   },
+
+  async refreshTokenAPI() {
+    const res = await api.post('/api/auth/refresh')
+
+    return res.data
+  },
 }

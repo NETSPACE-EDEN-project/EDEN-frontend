@@ -12,6 +12,20 @@ const api = axios.create({
   withCredentials: true,
 })
 
+let router = null
+let authStore = null
+
+const importDependencies = async () => {
+  if (!router) {
+    const routerModule = await import('../router')
+    router = routerModule.default
+  }
+  if (!authStore) {
+    const { useAuthStore } = await import('../stores/auth')
+    authStore = useAuthStore()
+  }
+}
+
 api.interceptors.request.use(
   (config) => {
     console.log(`API 請求: ${config.method.toUpperCase()} - ${config.url}`)
@@ -24,23 +38,46 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-  (response) => {
+  async (response) => {
+    const tokenRefreshed = response.headers['x-token-refreshed']
+    if (tokenRefreshed === 'true') {
+      console.log('Token 已自動刷新')
+
+      await importDependencies()
+
+      if (authStore) {
+        authStore.initializeAuth()
+        console.log('認證狀態已同步')
+      }
+    }
+
     console.log(
       `API 回應: ${response.config.method.toUpperCase()} - ${response.config.url}`,
       response.data,
     )
+
     return response
   },
-  (error) => {
+  async (error) => {
+    console.error(
+      `API 錯誤: ${error.config?.method?.toUpperCase()} - ${error.config?.url}`,
+      error.response?.data || error.message,
+    )
+
     if (error.response?.status === 401) {
-      console.warn('認證失敗，請重新登入')
-      window.location.href = '/login'
-    } else {
-      console.error(
-        `API 錯誤: ${error.config?.method?.toUpperCase()} - ${error.config?.url}`,
-        error.response.data,
-      )
+      console.warn('認證失敗，清除認證狀態')
+
+      await importDependencies()
+
+      if (authStore) {
+        authStore.clearAuth()
+      }
+
+      if (router && router.currentRoute.value.path !== '/auth') {
+        router.push('/auth')
+      }
     }
+
     return Promise.reject(error)
   },
 )

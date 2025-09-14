@@ -39,13 +39,17 @@ export const useAuthStore = defineStore('auth', () => {
   const clearAuthCookies = () => {
     const cookiesToClear = ['auth_token', 'user_display', 'remember_me']
     cookiesToClear.forEach((name) => {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; sameSite=lax;`
       document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
     })
   }
 
-  const hasUserDisplayCookie = () => !!getCookie('user_display')
+  const isAuthenticated = computed(() => {
+    if (user.value) return true
 
-  const isAuthenticated = computed(() => !!user.value || hasUserDisplayCookie())
+    const cookieUser = getUserFromCookie()
+    return !!cookieUser
+  })
 
   const userName = computed(() => {
     if (user.value?.username) return user.value.username
@@ -84,6 +88,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (user.value) user.value = { ...user.value, ...userData }
   }
 
+  const initializeAuth = () => {
+    if (!user.value) {
+      const cookieUser = getUserFromCookie()
+      if (cookieUser) {
+        user.value = cookieUser
+        console.log('從 Cookie 恢復用戶狀態:', cookieUser.username || cookieUser.email)
+      }
+    }
+  }
+
   return {
     user,
     isLoading,
@@ -96,5 +110,7 @@ export const useAuthStore = defineStore('auth', () => {
     setUser,
     clearAuth,
     updateUser,
+    getUserFromCookie,
+    initializeAuth,
   }
 })

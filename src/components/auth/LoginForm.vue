@@ -19,6 +19,10 @@ const handleSubmit = async () => {
   })
 
   if (result.success) {
+    email.value = ''
+    password.value = ''
+    rememberMe.value = false
+
     router.push('/')
   }
 }
