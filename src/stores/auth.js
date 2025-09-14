@@ -46,11 +46,16 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => {
-    if (isLoggedOut.value) return false
-    if (user.value) return true
+    if (isLoggedOut.value) {
+      return false
+    }
+    if (user.value) {
+      return true
+    }
 
     const cookieUser = getUserFromCookie()
-    return !!cookieUser
+    const result = !!cookieUser
+    return result
   })
 
   const userName = computed(() => {
@@ -97,7 +102,6 @@ export const useAuthStore = defineStore('auth', () => {
       const cookieUser = getUserFromCookie()
       if (cookieUser) {
         user.value = cookieUser
-        console.log('從 Cookie 恢復用戶狀態:', cookieUser.username || cookieUser.email)
       }
     }
   }
@@ -116,5 +120,6 @@ export const useAuthStore = defineStore('auth', () => {
     updateUser,
     getUserFromCookie,
     initializeAuth,
+    isLoggedOut,
   }
 })

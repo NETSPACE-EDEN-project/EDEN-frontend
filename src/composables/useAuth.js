@@ -1,9 +1,12 @@
 import Swal from 'sweetalert2'
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth.js'
 import { authService } from '../services/authService.js'
 
 export function useAuth() {
   const authStore = useAuthStore()
+
+  const { user, isAuthenticated, isLoading, userName } = storeToRefs(authStore)
 
   const handleApiError = async (error) => {
     console.error('API 呼叫失敗', error)
@@ -140,10 +143,10 @@ export function useAuth() {
     logout,
     getCurrentUser,
     verifyAuthStatus,
-    user: authStore.user,
-    isAuthenticated: authStore.isAuthenticated,
-    isLoading: authStore.isLoading,
-    userName: authStore.userName,
+    user,
+    isAuthenticated,
+    isLoading,
+    userName,
     setError: authStore.setError,
     clearError: authStore.clearError,
   }
