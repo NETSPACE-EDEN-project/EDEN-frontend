@@ -3,7 +3,6 @@ import api from './api.js'
 export const chatService = {
   async getChatListAPI() {
     const res = await api.get('/api/chat/chats')
-
     return res.data
   },
 
@@ -31,6 +30,11 @@ export const chatService = {
         limit: options.limit || 50,
       },
     })
+    return res.data
+  },
+
+  async getRoomInfoAPI(roomId) {
+    const res = await api.get(`/api/chat/rooms/${roomId}/info`)
     return res.data
   },
 }
