@@ -23,16 +23,16 @@ const mainClass = computed(() => {
 })
 
 const initializeApp = async () => {
-  setLoading(true)
+  authStore.setLoading(true)
   try {
     await authService.refreshTokenAPI()
-    const res = await authService.getCurrentUserAPI()
+    const res = await getCurrentUser()
     if (res.success) setUser(res.data.user)
     else clearAuth()
   } catch {
     clearAuth()
   } finally {
-    setLoading(false)
+    authStore.setLoading(true)
   }
 }
 
