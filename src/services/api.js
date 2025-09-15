@@ -1,7 +1,11 @@
 import axios from 'axios'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'https://eden-frontend.zeabur.app' || 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://eden-backend.zeabur.app'
+
+console.log('Current environment:', import.meta.env.MODE)
+console.log(API_BASE_URL)
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL)
+console.log('All env vars:', import.meta.env)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
