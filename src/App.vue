@@ -28,9 +28,9 @@ const initializeApp = async () => {
     await authService.refreshTokenAPI()
     const res = await getCurrentUser()
     if (res.success) setUser(res.data.user)
-    else clearAuth()
+    else authStore.clearAuth()
   } catch {
-    clearAuth()
+    authStore.clearAuth()
   } finally {
     authStore.setLoading(true)
   }
