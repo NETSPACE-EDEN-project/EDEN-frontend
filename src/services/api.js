@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://eden-backend.zeabur.app'
+const API_BASE_URL = 'https://eden-backend.zeabur.app'
 
 console.log('Current environment:', import.meta.env.MODE)
 console.log(API_BASE_URL)
