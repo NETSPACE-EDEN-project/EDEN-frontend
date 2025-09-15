@@ -1,14 +1,6 @@
 import axios from 'axios'
 
-const getAPIBaseURL = () => {
-  if (import.meta.env.VITE_ENV === 'development') {
-    return 'http://localhost:3000'
-  } else {
-    return import.meta.env.VITE_API_URL
-  }
-}
-
-const API_BASE_URL = getAPIBaseURL()
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 console.log('Current environment:', import.meta.env.MODE)
 console.log(API_BASE_URL)
