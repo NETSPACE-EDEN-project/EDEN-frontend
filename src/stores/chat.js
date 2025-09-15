@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 export const useChatStore = defineStore('chat', () => {
   const chatList = ref([])
   const currentRoom = ref(null)
+  const currentRoomInfo = ref(null)
   const messages = ref([])
   const onlineUsers = ref([])
   const typingUsers = ref([])
@@ -71,8 +72,13 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  const setCurrentRoomInfo = (roomInfo) => {
+    currentRoomInfo.value = roomInfo
+  }
+
   const clearChatData = () => {
     currentRoom.value = null
+    currentRoomInfo.value = null
     messages.value = []
     onlineUsers.value = []
     clearTypingUsers()
@@ -82,6 +88,7 @@ export const useChatStore = defineStore('chat', () => {
   return {
     chatList,
     currentRoom,
+    currentRoomInfo,
     messages,
     onlineUsers,
     typingUsers,
@@ -95,6 +102,7 @@ export const useChatStore = defineStore('chat', () => {
     clearError,
     setChatList,
     setCurrentRoom,
+    setCurrentRoomInfo,
     setMessages,
     prependMessages,
     addMessage,
