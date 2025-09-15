@@ -10,7 +10,7 @@ import LoadingOverlay from './components/LoadingOverlay.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
-const { getCurrentUser } = useAuth()
+const { verifyAuthStatus } = useAuth()
 
 const showNavigation = computed(() => {
   const hideNavRoutes = ['/auth', '/login', '/register']
@@ -25,15 +25,15 @@ const mainClass = computed(() => {
 const initializeApp = async () => {
   authStore.setLoading(true)
   try {
-    await authService.refreshTokenAPI()
-    const res = await getCurrentUser()
-    if (res.success) setUser(res.data.user)
-    else authStore.clearAuth()
-  } catch {
-    authStore.setLoading(true)
-    authStore.clearAuth()
+    authStore.initializeAuth()
+
+    if (authStore.isAuthenticated) {
+      await verifyAuthStatus()
+    }
+  } catch (error) {
+    console.error('初始化失敗:', error)
   } finally {
-    authStore.setLoading(true)
+    authStore.setLoading(false)
   }
 }
 

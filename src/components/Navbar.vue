@@ -46,7 +46,7 @@ const handleMobileLogout = async () => {
               <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
                 <span class="text-sm font-bold text-white">{{ userName[0].toUpperCase() }}</span>
               </div>
-              <span class="text-gray-700" v-if="isAuthenticated">{{ userName }}</span>
+              <span class="text-gray-700">{{ userName }}</span>
             </div>
             <button @click="handleLogout" class="font-medium text-red-600 hover:text-red-800">
               登出
@@ -102,7 +102,7 @@ const handleMobileLogout = async () => {
               <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
                 <span class="text-sm font-bold text-white">{{ userName[0].toUpperCase() }}</span>
               </div>
-              <span class="font-medium text-gray-700" v-if="isAuthenticated">{{ userName }}</span>
+              <span class="font-medium text-gray-700">{{ userName }}</span>
             </div>
             <router-link
               to="/chat"

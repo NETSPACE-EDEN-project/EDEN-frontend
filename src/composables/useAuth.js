@@ -115,34 +115,34 @@ export function useAuth() {
     }
   }
 
-  // const verifyAuthStatus = async () => {
-  //   authStore.setLoading(true)
-  //   try {
-  //     const res = await authService.verifyAuthStatusAPI()
-  //     if (res.success && res.data.isAuthenticated) {
-  //       if (res.data.user) {
-  //         authStore.setUser(res.data.user)
-  //       } else if (!authStore.user) {
-  //         await getCurrentUser()
-  //       }
-  //       return res
-  //     } else {
-  //       authStore.setError(res)
-  //       return res
-  //     }
-  //   } catch (err) {
-  //     return handleApiError(err)
-  //   } finally {
-  //     authStore.setLoading(false)
-  //   }
-  // }
+  const verifyAuthStatus = async () => {
+    authStore.setLoading(true)
+    try {
+      const res = await authService.verifyAuthStatusAPI()
+      if (res.success && res.data.isAuthenticated) {
+        if (res.data.user) {
+          authStore.setUser(res.data.user)
+        } else if (!authStore.user) {
+          await getCurrentUser()
+        }
+        return res
+      } else {
+        authStore.setError(res)
+        return res
+      }
+    } catch (err) {
+      return handleApiError(err)
+    } finally {
+      authStore.setLoading(false)
+    }
+  }
 
   return {
     login,
     register,
     logout,
     getCurrentUser,
-    // verifyAuthStatus,
+    verifyAuthStatus,
     user,
     isAuthenticated,
     isLoading,

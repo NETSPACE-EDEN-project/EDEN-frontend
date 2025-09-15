@@ -1,12 +1,41 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { authService } from '../services/authService.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const isLoading = ref(false)
   const error = ref(null)
   const isLoggedOut = ref(false)
+
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop().split(';').shift()
+    return null
+  }
+
+  const getUserFromCookie = () => {
+    const cookie = getCookie('user_display')
+    if (!cookie) return null
+
+    try {
+      let decoded = decodeURIComponent(cookie)
+
+      if (decoded.startsWith('s:')) {
+        decoded = decoded.slice(2)
+      }
+
+      const lastDotIndex = decoded.lastIndexOf('.')
+      if (lastDotIndex > -1) {
+        decoded = decoded.slice(0, lastDotIndex)
+      }
+      const payload = JSON.parse(decoded)
+      return payload
+    } catch (err) {
+      console.error('解析 user_display cookie 失敗', err)
+      return null
+    }
+  }
 
   const clearAuthCookies = () => {
     const cookiesToClear = ['auth_token', 'user_display', 'remember_me']
@@ -16,11 +45,28 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  const isAuthenticated = computed(() => !!user.value)
+  const isAuthenticated = computed(() => {
+    if (isLoggedOut.value) {
+      return false
+    }
+    if (user.value) {
+      return true
+    }
+
+    const cookieUser = getUserFromCookie()
+    const result = !!cookieUser
+    return result
+  })
 
   const userName = computed(() => {
-    if (!user.value) return '用戶'
-    return user.value.username || user.value.email || '用戶'
+    if (user.value?.username) return user.value.username
+    if (user.value?.email) return user.value.email
+
+    const cookieUser = getUserFromCookie()
+    if (cookieUser?.username) return cookieUser.username
+    if (cookieUser?.email) return cookieUser.email
+
+    return '用戶'
   })
 
   const setLoading = (loading) => {
@@ -51,16 +97,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (user.value) user.value = { ...user.value, ...userData }
   }
 
-  const initializeAuth = async () => {
-    setLoading(true)
-    try {
-      const res = await authService.getCurrentUserAPI()
-      if (res.success) setUser(res.data.user)
-      else clearAuth()
-    } catch {
-      clearAuth()
-    } finally {
-      setLoading(false)
+  const initializeAuth = () => {
+    if (!user.value) {
+      const cookieUser = getUserFromCookie()
+      if (cookieUser) {
+        user.value = cookieUser
+      }
     }
   }
 
@@ -76,6 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
     setUser,
     clearAuth,
     updateUser,
+    getUserFromCookie,
     initializeAuth,
     isLoggedOut,
   }
