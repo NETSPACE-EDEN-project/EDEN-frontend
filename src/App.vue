@@ -30,6 +30,7 @@ const initializeApp = async () => {
     if (res.success) setUser(res.data.user)
     else authStore.clearAuth()
   } catch {
+    authStore.setLoading(true)
     authStore.clearAuth()
   } finally {
     authStore.setLoading(true)
