@@ -142,7 +142,7 @@ export function useAuth() {
     register,
     logout,
     getCurrentUser,
-    verifyAuthStatus,
+    // verifyAuthStatus,
     user,
     isAuthenticated,
     isLoading,
