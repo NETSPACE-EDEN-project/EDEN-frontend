@@ -1,9 +1,21 @@
 import Swal from 'sweetalert2'
+import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chat.js'
 import { chatService } from '../services/chatService.js'
 
 export function useChat() {
   const chatStore = useChatStore()
+
+  const {
+    chatList,
+    currentRoom,
+    currentRoomInfo,
+    onlineUsers,
+    typingUsers,
+    isLoading,
+    error,
+    hasChats,
+  } = storeToRefs(chatStore)
 
   const handleApiError = async (error) => {
     console.error('聊天 API 呼叫失敗', error)
@@ -159,21 +171,53 @@ export function useChat() {
     }
   }
 
+  const getRoomInfo = async (roomId) => {
+    if (!roomId) {
+      const errObj = { success: false, error: 'MissingRoomId', message: '房間ID不能為空' }
+      chatStore.setError(errObj)
+      return errObj
+    }
+
+    chatStore.setLoading(true)
+    chatStore.clearError()
+
+    try {
+      const res = await chatService.getRoomInfoAPI(roomId)
+
+      if (res.success) {
+        if (chatStore.setCurrentRoomInfo) {
+          chatStore.setCurrentRoomInfo(res.data)
+        }
+        return res
+      } else {
+        chatStore.setError(res)
+        await Swal.fire('載入失敗', res.message || '載入房間資訊失敗', 'error')
+        return res
+      }
+    } catch (err) {
+      return handleApiError(err)
+    } finally {
+      chatStore.setLoading(false)
+    }
+  }
+
   return {
     getChatList,
     searchUsers,
     startPrivateChat,
     createGroupChat,
     getChatMessages,
+    getRoomInfo,
 
-    chatList: chatStore.chatList,
-    currentRoom: chatStore.currentRoom,
-    messages: chatStore.messages,
-    onlineUsers: chatStore.onlineUsers,
-    typingUsers: chatStore.typingUsers,
-    isLoading: chatStore.isLoading,
-    error: chatStore.error,
-    hasChats: chatStore.hasChats,
+    chatList,
+    currentRoom,
+    currentRoomInfo,
+    messages,
+    onlineUsers,
+    typingUsers,
+    isLoading,
+    error,
+    hasChats,
 
     setCurrentRoom: chatStore.setCurrentRoom,
     addMessage: chatStore.addMessage,
