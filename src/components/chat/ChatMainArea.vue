@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useChat } from '../../composables/useChat.js'
 
-import ChatEmptyState from './ChatEmptyState.vue'
 import ChatHeader from './ChatHeader.vue'
+import MessageList from './MessageList.vue'
 
 const props = defineProps({
   isMobile: {
@@ -26,7 +26,7 @@ const hasCurrentRoom = computed(() => !!currentRoom.value)
 <template>
   <div class="flex flex-col flex-1">
     <!-- 頭部固定 -->
-    <div class="sticky top-0 z-10 p-4 bg-white/50">
+    <div class="sticky top-0 z-10 p-2 bg-white/50">
       <ChatHeader
         :has-current-room="hasCurrentRoom"
         :is-mobile="isMobile"
@@ -35,11 +35,8 @@ const hasCurrentRoom = computed(() => !!currentRoom.value)
     </div>
 
     <!-- 主要內容區域 -->
-    <div v-if="hasCurrentRoom" class="flex flex-col flex-1 p-4">
-      <!-- 放 MessageList / MessageInput -->
+    <div class="top-0 z-10 p-2 mt-2 h-100 md:h-217 bg-white/50">
+      <MessageList :is-mobile="isMobile" />
     </div>
-
-    <!-- 空狀態 -->
-    <ChatEmptyState v-else />
   </div>
 </template>

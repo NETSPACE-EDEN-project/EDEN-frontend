@@ -46,7 +46,7 @@ const getInitial = (name, type) => {
       <div v-if="hasCurrentRoom" class="flex items-center space-x-3">
         <div class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
           <span class="text-sm font-bold text-white">
-            {{ getInitial(currentRoom.roomName) }}
+            {{ getInitial(chat.roomName, chat.roomType) }}
           </span>
         </div>
         <div>
