@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { useChat } from '../composables/useChat.js'
 
+import ChatSidebar from '../components/chat/ChatSidebar.vue'
+
 const router = useRouter()
 const { isAuthenticated, verifyAuthStatus } = useAuth()
 const {
@@ -27,7 +29,11 @@ const isMobile = computed(() => windowWidth.value < 768)
 // 方法
 const handleResize = () => {
   windowWidth.value = window.innerWidth
-  if (windowWidth.value >= 768) showSidebar.value = true
+  if (windowWidth.value >= 768) {
+    showSidebar.value = true
+  } else {
+    showSidebar.value = false
+  }
 }
 
 const toggleSidebar = () => {
@@ -38,14 +44,22 @@ const loadChatList = async () => {
   await getChatList()
 }
 
-onMounted(async () => {
-  // 先驗證認證狀態，再檢查
-  await verifyAuthStatus()
-  await nextTick()
+const handleChatSelected = (chat) => {
+  if (isMobile.value) {
+    showSidebar.value = false
+  }
+}
 
-  if (!isAuthenticated.value) {
+onMounted(async () => {
+  const authResult = await verifyAuthStatus()
+  if (!authResult.success) {
     router.push('/auth')
     return
+  }
+  await nextTick()
+
+  if (isMobile.value) {
+    showSidebar.value = false
   }
 
   await loadChatList()
@@ -59,12 +73,53 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="z-10 flex items-center justify-center h-screen min-h-screen">
-    <!-- 側邊欄遮罩（移動端） -->
+  <div class="flex h-screen overflow-hidden bg-transparent">
+    <!-- 側邊欄 -->
+    <ChatSidebar
+      :show="showSidebar"
+      :is-mobile="isMobile"
+      @toggle="toggleSidebar"
+      @show-user-search="() => {}"
+      @show-create-group="() => {}"
+      @chat-selected="handleChatSelected"
+      @reload-chats="loadChatList"
+    />
+
+    <!-- 主要內容區域 -->
+    <div class="relative flex flex-col flex-1 bg-gray-50/80">
+      <!-- 移動端左側切換按鈕 -->
+      <button
+        v-if="isMobile"
+        @click="toggleSidebar"
+        class="fixed z-30 p-2 transition-all duration-300 transform -translate-y-1/2 bg-white border rounded-r-lg shadow-md top-1/2"
+        :class="showSidebar ? 'left-80' : 'left-0'"
+      >
+        <svg
+          class="w-5 h-5 text-gray-600 transition-transform duration-300"
+          :class="{ 'rotate-180': showSidebar }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      <!-- 主聊天內容 -->
+      <div class="flex items-center justify-center flex-1 text-gray-500">
+        <div class="text-center">
+          <div class="mb-4 text-6xl">💬</div>
+          <h3 class="mb-2 text-lg font-medium">歡迎使用聊天室</h3>
+          <p class="text-sm">選擇一個聊天開始對話</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 移動端側邊欄遮罩 -->
     <div
       v-if="isMobile && showSidebar"
       @click="showSidebar = false"
-      class="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
+      class="fixed inset-0 z-20 bg-black/50 md:hidden"
     />
   </div>
 </template>
