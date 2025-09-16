@@ -1,11 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { useChat } from '../composables/useChat.js'
 
 const router = useRouter()
-const { isAuthenticated } = useAuth()
+const { isAuthenticated, verifyAuthStatus } = useAuth()
 const {
   chatList,
   currentRoom,
@@ -39,6 +39,10 @@ const loadChatList = async () => {
 }
 
 onMounted(async () => {
+  // 先驗證認證狀態，再檢查
+  await verifyAuthStatus()
+  await nextTick()
+
   if (!isAuthenticated.value) {
     router.push('/auth')
     return
