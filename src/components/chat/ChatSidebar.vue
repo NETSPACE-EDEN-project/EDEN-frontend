@@ -1,6 +1,6 @@
 <script setup>
 import { useChat } from '../../composables/useChat.js'
-// import ChatListItem from './ChatListItem.vue'
+import ChatListItem from './ChatListItem.vue'
 
 const props = defineProps({
   show: {
@@ -34,8 +34,16 @@ const selectChat = async (chat) => {
   <div
     :class="[
       'transition-all duration-300 bg-white border-r flex flex-col',
-      show ? 'w-80' : 'w-0 overflow-hidden',
-      isMobile ? 'absolute inset-y-0 left-0 z-30' : 'relative',
+      ...(isMobile
+        ? [
+            'fixed',
+            'inset-y-0',
+            'left-0',
+            'z-30',
+            show ? 'translate-x-0' : '-translate-x-full',
+            'w-80',
+          ]
+        : ['fixed', 'top-0', 'left-0', 'h-screen', 'w-80', 'z-10', 'mt-16']),
     ]"
   >
     <!-- 頭部 -->
@@ -75,7 +83,7 @@ const selectChat = async (chat) => {
         <p class="text-sm">還沒有聊天記錄</p>
         <p class="text-xs text-gray-400">開始新的對話吧！</p>
       </div>
-      <div v-else class="divide-y">
+      <div v-else class="divide-y divide-gray-100">
         <ChatListItem
           v-for="chat in chatList"
           :key="chat.roomId"

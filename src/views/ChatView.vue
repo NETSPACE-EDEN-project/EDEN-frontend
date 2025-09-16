@@ -106,7 +106,7 @@ onUnmounted(() => {
       </button>
 
       <!-- 主聊天內容 -->
-      <div class="flex items-center justify-center flex-1 text-gray-500">
+      <div class="flex items-center justify-center flex-1 text-gray-500 ml-80">
         <div class="text-center">
           <div class="mb-4 text-6xl">💬</div>
           <h3 class="mb-2 text-lg font-medium">歡迎使用聊天室</h3>
