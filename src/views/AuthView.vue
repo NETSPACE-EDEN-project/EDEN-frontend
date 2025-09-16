@@ -31,7 +31,7 @@ const showSignUp = () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen p-4">
+  <div class="z-10 flex items-center justify-center min-h-screen p-4">
     <div class="w-full max-w-md">
       <!-- Logo 區域 -->
       <div class="mb-8 text-center">

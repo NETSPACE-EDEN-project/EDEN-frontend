@@ -6,6 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const error = ref(null)
   const isLoggedOut = ref(false)
+  const isReady = ref(false)
 
   const getCookie = (name) => {
     const value = `; ${document.cookie}`
@@ -104,6 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = cookieUser
       }
     }
+    isReady.value = true
   }
 
   return {
@@ -111,6 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading,
     error,
     isAuthenticated,
+    isReady,
     userName,
     setLoading,
     setError,

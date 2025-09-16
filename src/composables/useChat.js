@@ -12,6 +12,7 @@ export function useChat() {
     currentRoomInfo,
     onlineUsers,
     typingUsers,
+    messages,
     isLoading,
     error,
     hasChats,

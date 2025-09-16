@@ -35,6 +35,7 @@ const initializeApp = async () => {
     console.log('After verify, auth state:', authStore.isAuthenticated)
   } catch (error) {
     console.error('初始化失敗:', error)
+    router.push('/auth')
   } finally {
     authStore.setLoading(false)
   }
@@ -56,10 +57,12 @@ onMounted(() => {
     <!-- 導航欄 -->
     <Navbar v-if="showNavigation" class="fixed top-0 left-0 z-20 w-full" />
 
-    <!-- 路由內容 -->
-    <main :class="mainClass">
-      <router-view />
-    </main>
+    <div v-if="authStore.isReady">
+      <!-- 路由內容 -->
+      <main :class="mainClass">
+        <router-view />
+      </main>
+    </div>
 
     <!-- 全域載入覆蓋 -->
     <LoadingOverlay :show="authStore.isLoading" message="載入中..." />
