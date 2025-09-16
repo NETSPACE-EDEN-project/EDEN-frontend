@@ -5,6 +5,7 @@ import { useAuth } from '../composables/useAuth.js'
 import { useChat } from '../composables/useChat.js'
 
 import ChatSidebar from '../components/chat/ChatSidebar.vue'
+import ChatMainArea from '../components/chat/ChatMainArea.vue'
 
 const router = useRouter()
 const { isAuthenticated, verifyAuthStatus } = useAuth()
@@ -86,7 +87,7 @@ onUnmounted(() => {
     />
 
     <!-- 主要內容區域 -->
-    <div class="relative flex flex-col flex-1 bg-gray-50/80">
+    <div class="relative flex flex-col flex-1 bg-transparent">
       <!-- 移動端左側切換按鈕 -->
       <button
         v-if="isMobile"
@@ -106,12 +107,12 @@ onUnmounted(() => {
       </button>
 
       <!-- 主聊天內容 -->
-      <div class="flex items-center justify-center flex-1 text-gray-500 ml-80">
-        <div class="text-center">
-          <div class="mb-4 text-6xl">💬</div>
-          <h3 class="mb-2 text-lg font-medium">歡迎使用聊天室</h3>
-          <p class="text-sm">選擇一個聊天開始對話</p>
-        </div>
+      <div class="flex items-center justify-center flex-1 bg-transparent md:ml-80">
+        <ChatMainArea
+          :is-mobile="isMobile"
+          :show-sidebar="showSidebar"
+          @toggle-sidebar="toggleSidebar"
+        />
       </div>
     </div>
 
