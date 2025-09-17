@@ -31,8 +31,8 @@ const showSignUp = () => {
 </script>
 
 <template>
-  <div class="z-10 flex items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-md">
+  <div class="z-10 flex items-center justify-center min-h-full p-4 overflow-y-auto">
+    <div class="w-full max-w-md py-8">
       <!-- Logo 區域 -->
       <div class="mb-8 text-center">
         <div
@@ -69,8 +69,7 @@ const showSignUp = () => {
           </button>
         </div>
 
-        <!-- 表單區域 -->
-        <div class="min-h-[300px]">
+        <div>
           <LoginForm v-if="authMode === 'login'" @switch-to-signup="showSignUp" />
           <SignUpForm v-if="authMode === 'signup'" @switch-to-login="showLogin" />
         </div>
