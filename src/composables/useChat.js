@@ -97,7 +97,11 @@ export function useChat() {
       const res = await chatService.startPrivateChatAPI(targetUserId)
 
       if (res.success) {
-        await Swal.fire('成功', '私人聊天室創建成功', 'success')
+        if (res.data.isNew) {
+          await Swal.fire('成功', '私人聊天室創建成功', 'success')
+        } else {
+          await Swal.fire('提示', '聊天室已存在', 'info')
+        }
         return res
       } else {
         chatStore.setError(res)
