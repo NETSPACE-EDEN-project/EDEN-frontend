@@ -23,7 +23,7 @@ const sendMessage = async () => {
   const newMessage = {
     id: Date.now(),
     content: messageText,
-    senderId: userName.value,
+    senderId: userId.value,
     senderName: userName.value,
     createdAt: new Date().toISOString(),
     messageType: 'text',

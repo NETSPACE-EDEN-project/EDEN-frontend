@@ -35,7 +35,7 @@ const formatTime = (timestamp) => {
     >
       <!-- 發送者名稱 -->
       <div v-if="showSenderName" class="mb-1 text-xs opacity-75">
-        {{ message.senderName }}
+        {{ message.senderUsername }}
       </div>
 
       <!-- 消息內容 -->
