@@ -123,6 +123,13 @@ export function useChat() {
       return errObj
     }
 
+    if (!groupData.memberIds || groupData.memberIds.length === 0) {
+      const errObj = { success: false, error: 'MissingMembers', message: '請至少選擇一個成員' }
+      await Swal.fire('錯誤', errObj.message, 'error')
+      chatStore.setError(errObj)
+      return errObj
+    }
+
     chatStore.setLoading(true)
     chatStore.clearError()
 

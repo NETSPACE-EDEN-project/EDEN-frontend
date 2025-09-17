@@ -7,6 +7,7 @@ import { useChat } from '../composables/useChat.js'
 import ChatSidebar from '../components/chat/ChatSidebar.vue'
 import ChatMainArea from '../components/chat/ChatMainArea.vue'
 import SearchUserModal from '../components/chat/SearchUserModal.vue'
+import CreateGroupModal from '../components/chat/CreateGroupModal.vue'
 
 const router = useRouter()
 const { isAuthenticated, verifyAuthStatus } = useAuth()
@@ -24,6 +25,7 @@ const {
 // 響應式數據
 const showSidebar = ref(true)
 const showUserSearch = ref(false)
+const showCreateGroup = ref(false)
 const windowWidth = ref(window.innerWidth)
 
 // 計算屬性
@@ -81,6 +83,13 @@ onUnmounted(() => {
     @close="showUserSearch = false"
     @chat-created="loadChatList"
   />
+
+  <CreateGroupModal
+    :show="showCreateGroup"
+    @close="showCreateGroup = false"
+    @chat-created="loadChatList"
+  />
+
   <div class="flex h-screen overflow-hidden bg-transparent">
     <!-- 側邊欄 -->
     <ChatSidebar
@@ -88,7 +97,7 @@ onUnmounted(() => {
       :is-mobile="isMobile"
       @toggle="toggleSidebar"
       @show-user-search="showUserSearch = true"
-      @show-create-group="() => {}"
+      @show-create-group="showCreateGroup = true"
       @chat-selected="handleChatSelected"
       @reload-chats="loadChatList"
     />
