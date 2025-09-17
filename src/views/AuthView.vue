@@ -31,56 +31,79 @@ const showSignUp = () => {
 </script>
 
 <template>
-  <div class="z-10 flex items-center justify-center min-h-full p-4 overflow-y-auto">
-    <div class="w-full max-w-md py-8">
-      <!-- Logo 區域 -->
-      <div class="mb-8 text-center">
-        <div
-          class="flex items-center justify-center w-16 h-16 mx-auto mb-4 overflow-hidden bg-blue-600 rounded-full"
-        >
-          <img src="/icon.jpg" alt="NETSPACE-EDEN icon" class="object-cover w-full h-full" />
-        </div>
-        <h1 class="text-2xl font-bold text-blue-700">NETSPACE-EDEN</h1>
-      </div>
-
-      <!-- 認證卡片 -->
-      <div class="p-6 shadow-lg bg-white/90 backdrop-blur-sm rounded-xl">
-        <!-- 切換標籤 -->
-        <div class="flex p-1 mb-6 bg-gray-100 rounded-lg">
-          <button
-            @click="showLogin"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md font-medium transition-all',
-              authMode === 'login' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-blue-600',
-            ]"
+  <!-- 確保完整的可滾動容器 -->
+  <div class="auth-container">
+    <div class="flex items-start justify-center min-h-full p-4 py-8">
+      <div class="w-full max-w-md">
+        <!-- Logo 區域 -->
+        <div class="mb-8 text-center">
+          <div
+            class="flex items-center justify-center w-16 h-16 mx-auto mb-4 overflow-hidden bg-blue-600 rounded-full"
           >
-            登入
-          </button>
-          <button
-            @click="showSignUp"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md font-medium transition-all',
-              authMode === 'signup'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:text-blue-600',
-            ]"
-          >
-            註冊
-          </button>
+            <img src="/icon.jpg" alt="NETSPACE-EDEN icon" class="object-cover w-full h-full" />
+          </div>
+          <h1 class="text-2xl font-bold text-blue-700">NETSPACE-EDEN</h1>
         </div>
 
-        <div>
-          <LoginForm v-if="authMode === 'login'" @switch-to-signup="showSignUp" />
-          <SignUpForm v-if="authMode === 'signup'" @switch-to-login="showLogin" />
-        </div>
-      </div>
+        <!-- 認證卡片 -->
+        <div class="p-6 shadow-lg bg-white/90 backdrop-blur-sm rounded-xl">
+          <!-- 切換標籤 -->
+          <div class="flex p-1 mb-6 bg-gray-100 rounded-lg">
+            <button
+              @click="showLogin"
+              :class="[
+                'flex-1 py-2 px-4 rounded-md font-medium transition-all',
+                authMode === 'login'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-blue-600',
+              ]"
+            >
+              登入
+            </button>
+            <button
+              @click="showSignUp"
+              :class="[
+                'flex-1 py-2 px-4 rounded-md font-medium transition-all',
+                authMode === 'signup'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-blue-600',
+              ]"
+            >
+              註冊
+            </button>
+          </div>
 
-      <!-- 底部連結 -->
-      <div class="mt-6 text-center">
-        <router-link to="/" class="font-medium text-blue-600 hover:text-blue-800">
-          回到首頁
-        </router-link>
+          <!-- 表單區域 -->
+          <div>
+            <LoginForm v-if="authMode === 'login'" @switch-to-signup="showSignUp" />
+            <SignUpForm v-if="authMode === 'signup'" @switch-to-login="showLogin" />
+          </div>
+        </div>
+
+        <!-- 底部連結 -->
+        <div class="mt-6 text-center">
+          <router-link to="/" class="font-medium text-blue-600 hover:text-blue-800">
+            回到首頁
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.auth-container {
+  height: 100vh;
+  height: 100dvh; /* 動態視窗高度，對移動端更友好 */
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS 滑順滾動 */
+}
+
+/* 確保在小螢幕上有足夠的滾動空間 */
+@media (max-height: 700px) {
+  .auth-container {
+    padding-bottom: 2rem;
+  }
+}
+</style>

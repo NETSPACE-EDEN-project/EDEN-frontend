@@ -52,14 +52,24 @@ onMounted(() => {
     class="fixed inset-0 bg-[url('/brandImage.jpg')] bg-center bg-cover bg-no-repeat pointer-events-none z-0"
   ></div>
 
-  <!-- 主要內容容器 -->
-  <div class="fixed inset-0 z-10 flex flex-col overflow-hidden bg-white/85">
+  <div
+    :class="[
+      'fixed inset-0 z-10 flex flex-col bg-white/85',
+      route.path === '/auth' ? 'overflow-y-auto' : 'overflow-hidden',
+    ]"
+  >
     <!-- 導航欄 -->
     <Navbar v-if="showNavigation" class="fixed top-0 left-0 z-20 w-full" />
 
     <div v-if="authStore.isReady" class="flex flex-1 h-full">
       <!-- Router view -->
-      <main :class="['flex-1 flex flex-col', mainClass]">
+      <main
+        :class="[
+          'flex-1 flex flex-col',
+          mainClass,
+          route.path === '/auth' ? 'overflow-y-auto' : '',
+        ]"
+      >
         <router-view />
       </main>
     </div>
