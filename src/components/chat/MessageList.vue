@@ -11,9 +11,10 @@ const { currentRoom, messages } = useChat()
 
 const messagesContainer = ref(null)
 
-// 計算當前用戶ID（這裡簡化為用戶名）
+// 計算當前用戶ID
 const currentUserId = computed(() => userId.value)
 
+// 自動滾動到底部
 const scrollToBottom = async () => {
   await nextTick()
   if (messagesContainer.value) {
@@ -21,37 +22,29 @@ const scrollToBottom = async () => {
   }
 }
 
-// 監聽消息變化，自動滾動到底部
-watch(
-  messages,
-  () => {
-    scrollToBottom()
-  },
-  { deep: true },
-)
+// 監聽消息變化
+watch(messages, () => scrollToBottom(), { deep: true })
 
-// 監聽當前房間變化，滾動到底部
-watch(currentRoom, () => {
-  scrollToBottom()
-})
+// 監聽聊天室變化
+watch(currentRoom, () => scrollToBottom())
 </script>
 
 <template>
-  <div ref="messagesContainer" class="flex-1 p-4 overflow-y-auto bg-gray-50 h-60 md:h-165">
-    <!-- 空狀態 -->
-    <div v-if="!currentRoom" class="flex items-center justify-center h-full text-gray-500">
-      <ChatEmptyState />
+  <div ref="messagesContainer" class="flex-1 p-4 overflow-y-auto bg-gray-50">
+    <!-- 未選聊天室 -->
+    <div v-if="!currentRoom" class="flex flex-col items-center justify-center h-full text-gray-500">
+      <ChatEmptyState text="請選擇一個聊天室開始對話" />
     </div>
 
     <!-- 已選聊天室，但沒有訊息 -->
     <div
       v-else-if="messages.length === 0"
-      class="flex items-center justify-center h-full text-gray-500"
+      class="flex flex-col items-center justify-center h-full text-gray-500"
     >
       <p>尚無訊息</p>
     </div>
 
-    <!-- 消息列表 -->
+    <!-- 有訊息 -->
     <div v-else class="space-y-4">
       <MessageItem
         v-for="message in messages"

@@ -27,8 +27,10 @@ const formatTime = (timestamp) => {
   <div :class="['flex w-full', isOwnMessage ? 'justify-end' : 'justify-start']">
     <div
       :class="[
-        'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
-        isOwnMessage ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200',
+        'px-4 py-2 rounded-lg break-words whitespace-pre-wrap',
+        isOwnMessage
+          ? 'bg-blue-600 text-white max-w-[75%]'
+          : 'bg-white text-gray-900 border border-gray-200 max-w-[75%]',
       ]"
     >
       <!-- 發送者名稱 -->
@@ -37,7 +39,7 @@ const formatTime = (timestamp) => {
       </div>
 
       <!-- 消息內容 -->
-      <div class="break-words">{{ message.content }}</div>
+      <div>{{ message.content }}</div>
 
       <!-- 時間戳 -->
       <div :class="['text-xs mt-1', isOwnMessage ? 'text-blue-100' : 'text-gray-500']">

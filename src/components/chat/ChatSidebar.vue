@@ -35,16 +35,9 @@ const selectChat = async (chat) => {
   <div
     :class="[
       'transition-all duration-300 bg-white border-r flex flex-col',
-      ...(isMobile
-        ? [
-            'fixed',
-            'inset-y-0',
-            'left-0',
-            'z-30',
-            show ? 'translate-x-0' : '-translate-x-full',
-            'w-80',
-          ]
-        : ['fixed', 'top-0', 'left-0', 'h-screen', 'w-80', 'z-10', 'mt-16']),
+      isMobile
+        ? ['fixed inset-y-0 left-0 z-30 w-80', show ? 'translate-x-0' : '-translate-x-full']
+        : ['fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 z-10'],
     ]"
   >
     <!-- 頭部 -->
@@ -62,6 +55,7 @@ const selectChat = async (chat) => {
           </svg>
         </button>
       </div>
+
       <!-- 操作按鈕 -->
       <div class="flex gap-2">
         <button
@@ -78,13 +72,14 @@ const selectChat = async (chat) => {
         </button>
       </div>
     </div>
+
     <!-- 聊天列表 -->
     <div class="flex-1 p-2 overflow-y-auto">
       <div v-if="chatList.length === 0" class="py-4 text-center text-gray-500">
         <p class="text-sm">還沒有聊天記錄</p>
         <p class="text-xs text-gray-400">開始新的對話吧！</p>
       </div>
-      <div v-else class="divide-y divide-gray-100">
+      <div v-else class="flex-1 p-2 overflow-y-auto">
         <ChatListItem
           v-for="chat in chatList"
           :key="chat.roomId"

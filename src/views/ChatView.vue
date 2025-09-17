@@ -87,7 +87,7 @@ onUnmounted(() => {
     />
 
     <!-- 主要內容區域 -->
-    <div class="relative flex flex-col flex-1 bg-transparent">
+    <div class="flex flex-col flex-1 bg-transparent">
       <!-- 移動端左側切換按鈕 -->
       <button
         v-if="isMobile"
@@ -107,13 +107,12 @@ onUnmounted(() => {
       </button>
 
       <!-- 主聊天內容 -->
-      <div class="flex items-center justify-center flex-1 bg-transparent md:ml-80">
-        <ChatMainArea
-          :is-mobile="isMobile"
-          :show-sidebar="showSidebar"
-          @toggle-sidebar="toggleSidebar"
-        />
-      </div>
+      <ChatMainArea
+        :is-mobile="isMobile"
+        :show-sidebar="showSidebar"
+        @toggle-sidebar="toggleSidebar"
+        class="flex-1"
+      />
     </div>
 
     <!-- 移動端側邊欄遮罩 -->

@@ -53,13 +53,13 @@ onMounted(() => {
   ></div>
 
   <!-- 主要內容容器 -->
-  <div class="fixed inset-0 z-10 overflow-x-hidden overflow-y-auto overscroll-contain bg-white/85">
+  <div class="fixed inset-0 z-10 flex flex-col overflow-hidden bg-white/85">
     <!-- 導航欄 -->
     <Navbar v-if="showNavigation" class="fixed top-0 left-0 z-20 w-full" />
 
-    <div v-if="authStore.isReady">
-      <!-- 路由內容 -->
-      <main :class="mainClass">
+    <div v-if="authStore.isReady" class="flex flex-1 h-full">
+      <!-- Router view -->
+      <main :class="['flex-1 flex flex-col', mainClass]">
         <router-view />
       </main>
     </div>
