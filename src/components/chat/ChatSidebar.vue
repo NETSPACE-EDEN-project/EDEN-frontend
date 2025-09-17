@@ -21,9 +21,10 @@ const emit = defineEmits([
   'reload-chats',
 ])
 
-const { chatList, setCurrentRoom, getChatMessages, isLoading } = useChat()
+const { chatList, setCurrentRoom, getChatMessages, isLoading, clearChatData } = useChat()
 
 const selectChat = async (chat) => {
+  clearChatData()
   setCurrentRoom(chat)
   await getChatMessages(chat.roomId)
   emit('chat-selected', chat)

@@ -70,6 +70,8 @@ export const useAuthStore = defineStore('auth', () => {
     return '用戶'
   })
 
+  const userId = computed(() => user.value?.id)
+
   const setLoading = (loading) => {
     isLoading.value = loading
   }
@@ -110,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user,
+    userId,
     isLoading,
     error,
     isAuthenticated,

@@ -6,7 +6,7 @@ import { authService } from '../services/authService.js'
 export function useAuth() {
   const authStore = useAuthStore()
 
-  const { user, isAuthenticated, isLoading, userName } = storeToRefs(authStore)
+  const { user, isAuthenticated, isLoading, userName, userId } = storeToRefs(authStore)
 
   const handleApiError = async (error) => {
     console.error('API 呼叫失敗', error)
@@ -152,6 +152,7 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     userName,
+    userId,
     setError: authStore.setError,
     clearError: authStore.clearError,
   }

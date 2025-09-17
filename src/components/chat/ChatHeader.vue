@@ -46,11 +46,11 @@ const getInitial = (name, type) => {
       <div v-if="hasCurrentRoom" class="flex items-center space-x-3">
         <div class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
           <span class="text-sm font-bold text-white">
-            {{ getInitial(chat.roomName, chat.roomType) }}
+            {{ getInitial(currentRoom?.roomName, currentRoom?.roomType) }}
           </span>
         </div>
         <div>
-          <h3 class="font-medium text-gray-900">{{ currentRoom.roomName || '未命名聊天' }}</h3>
+          <h3 class="font-medium text-gray-900">{{ currentRoom?.roomName || '未命名聊天' }}</h3>
           <p class="text-sm text-gray-500">
             {{ currentRoom.isGroup ? `${currentRoom.memberCount || 0} 位成員` : '私人聊天' }}
           </p>

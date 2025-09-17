@@ -2,15 +2,17 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useAuth } from '../../composables/useAuth.js'
 import { useChat } from '../../composables/useChat.js'
-import ChatEmptyState from './ChatEmptyState.vue'
 
-const { userName } = useAuth()
+import ChatEmptyState from './ChatEmptyState.vue'
+import MessageItem from './MessageItem.vue'
+
+const { userId } = useAuth()
 const { currentRoom, messages } = useChat()
 
 const messagesContainer = ref(null)
 
 // 計算當前用戶ID（這裡簡化為用戶名）
-const currentUserId = computed(() => userName.value)
+const currentUserId = computed(() => userId.value)
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -37,8 +39,27 @@ watch(currentRoom, () => {
 <template>
   <div ref="messagesContainer" class="flex-1 p-4 overflow-y-auto bg-gray-50 h-60 md:h-165">
     <!-- 空狀態 -->
-    <div v-if="messages.length === 0" class="flex items-center justify-center h-full text-gray-500">
+    <div v-if="!currentRoom" class="flex items-center justify-center h-full text-gray-500">
       <ChatEmptyState />
+    </div>
+
+    <!-- 已選聊天室，但沒有訊息 -->
+    <div
+      v-else-if="messages.length === 0"
+      class="flex items-center justify-center h-full text-gray-500"
+    >
+      <p>尚無訊息</p>
+    </div>
+
+    <!-- 消息列表 -->
+    <div v-else class="space-y-4">
+      <MessageItem
+        v-for="message in messages"
+        :key="message.id"
+        :message="message"
+        :is-own-message="message.senderId === currentUserId"
+        :show-sender-name="currentRoom?.isGroup && message.senderId !== currentUserId"
+      />
     </div>
   </div>
 </template>
