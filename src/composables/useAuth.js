@@ -41,12 +41,36 @@ export function useAuth() {
         await Swal.fire('登入成功', res.message || '', 'success')
         return res
       } else {
-        authStore.setError(res)
         await Swal.fire('登入失敗', res.message || '請稍後再試', 'error')
+        authStore.setError(res)
         return res
       }
     } catch (err) {
-      return handleApiError(err)
+      if (err.response?.data?.code === 'EmailNotVerified') {
+        const result = await Swal.fire({
+          title: '信箱尚未驗證',
+          text: '您必須先驗證信箱才能登入',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: '重新發送驗證信',
+          cancelButtonText: '取消',
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#6c757d',
+        })
+
+        if (result.isConfirmed) {
+          const resendResult = await resendEmail(userData.email)
+          if (resendResult.success) {
+            await Swal.fire('驗證信已發送', '請檢查您的信箱後再次登入', 'success')
+          }
+        }
+
+        const errorResponse = err.response?.data || { success: false, message: '登入失敗' }
+        authStore.setError(errorResponse)
+        return errorResponse
+      } else {
+        return handleApiError(err)
+      }
     } finally {
       authStore.setLoading(false)
     }

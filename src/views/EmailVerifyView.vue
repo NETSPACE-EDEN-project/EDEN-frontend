@@ -2,8 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
-const { verifyEmail, resendEmail } = useAuth()
 
+const { verifyEmail, resendEmail } = useAuth()
 const router = useRouter()
 const route = useRoute()
 
@@ -16,12 +16,20 @@ const isResending = ref(false)
 
 const handleverifyEmail = async () => {
   const token = route.query.token
+
+  if (!token) {
+    verificationResult.value = 'failed'
+    errorMessage.value = '無效的驗證連結'
+    isVerifying.value = false
+    return
+  }
+
   const res = await verifyEmail(token)
   if (res.success) {
     verificationResult.value = 'success'
   } else {
     verificationResult.value = 'failed'
-    errorMessage.value = res.message
+    errorMessage.value = res.message || '驗證連結無效或已過期'
   }
   isVerifying.value = false
 }
@@ -45,7 +53,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+  <div class="flex items-center justify-center min-h-screen p-4 bg-transparent">
     <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
       <!-- 載入中 -->
       <div v-if="isVerifying" class="text-center">
@@ -95,7 +103,7 @@ onMounted(() => {
           </svg>
         </div>
         <h2 class="mb-2 text-xl font-semibold">驗證失敗</h2>
-        <p class="mb-6 text-gray-600">{{ errorMessage || '驗證連結無效或已過期' }}</p>
+        <p class="mb-6 text-gray-600">{{ errorMessage }}</p>
 
         <!-- 重新寄送表單 -->
         <div v-if="showResendForm" class="mb-4 space-y-3">
@@ -137,35 +145,6 @@ onMounted(() => {
             重寄驗證信
           </button>
         </div>
-      </div>
-
-      <!-- 無效連結 -->
-      <div v-else class="text-center">
-        <div
-          class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full"
-        >
-          <svg
-            class="w-8 h-8 text-yellow-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-            ></path>
-          </svg>
-        </div>
-        <h2 class="mb-2 text-xl font-semibold">無效連結</h2>
-        <p class="mb-6 text-gray-600">此連結可能已過期或無效</p>
-        <button
-          @click="goToLogin"
-          class="w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-        >
-          返回登入
-        </button>
       </div>
     </div>
   </div>

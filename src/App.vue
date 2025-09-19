@@ -18,7 +18,7 @@ const showNavigation = computed(() => {
 })
 
 const mainClass = computed(() => {
-  const noPaddingRoutes = ['/auth', '/login', '/register']
+  const noPaddingRoutes = ['/auth', '/login', '/register', '/verify-email']
   return noPaddingRoutes.includes(route.path) ? '' : 'pt-16'
 })
 

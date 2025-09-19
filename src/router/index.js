@@ -9,7 +9,7 @@ const routes = [
   { path: '/', redirect: '/home' },
   { path: '/home', name: 'Home', component: Home },
   { path: '/auth', name: 'Auth', component: Auth },
-  { path: '/email-verify', name: 'EmailVerify', component: EmailVerify },
+  { path: '/verify-email', name: 'VerifyEmail', component: EmailVerify },
   { path: '/chat', name: 'Chat', component: Chat, meta: { requiresAuth: true } },
 ]
 

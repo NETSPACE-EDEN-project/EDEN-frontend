@@ -22,16 +22,13 @@ const {
   clearChatData,
 } = useChat()
 
-// 響應式數據
 const showSidebar = ref(true)
 const showUserSearch = ref(false)
 const showCreateGroup = ref(false)
 const windowWidth = ref(window.innerWidth)
 
-// 計算屬性
 const isMobile = computed(() => windowWidth.value < 768)
 
-// 方法
 const handleResize = () => {
   windowWidth.value = window.innerWidth
   if (windowWidth.value >= 768) {
