@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
-import { useAuth } from '@/composables/useAuth'
+import { useAuth } from '../../composables/useAuth.js'
 
 const emit = defineEmits(['switch-to-login'])
 const { register, isLoading } = useAuth()

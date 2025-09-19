@@ -142,6 +142,67 @@ export function useAuth() {
     }
   }
 
+  const verifyEmail = async (token) => {
+    if (!token) {
+      const errObj = { success: false, error: 'InvalidToken', message: '缺少驗證 Token' }
+      authStore.setError(errObj)
+      await Swal.fire('錯誤', errObj.message, 'error')
+      return errObj
+    }
+
+    authStore.setLoading(true)
+    authStore.clearError()
+
+    try {
+      const res = await authService.verifyEmailAPI(token)
+
+      if (res.success) {
+        if (res.data?.user) {
+          authStore.setUser(res.data.user)
+        }
+        await Swal.fire('驗證成功', res.message || '您的 Email 已完成驗證', 'success')
+        return res
+      } else {
+        authStore.setError(res)
+        await Swal.fire('驗證失敗', res.message || '驗證連結無效或已過期', 'error')
+        return res
+      }
+    } catch (err) {
+      return handleApiError(err)
+    } finally {
+      authStore.setLoading(false)
+    }
+  }
+
+  const resendEmail = async (email) => {
+    if (!email) {
+      const errObj = { success: false, error: 'MissingEmail', message: '請輸入 Email' }
+      authStore.setError(errObj)
+      await Swal.fire('錯誤', errObj.message, 'error')
+      return errObj
+    }
+
+    authStore.setLoading(true)
+    authStore.clearError()
+
+    try {
+      const res = await authService.resendEmailAPI(email)
+
+      if (res.success) {
+        await Swal.fire('成功', res.message || '驗證信已重新寄送', 'success')
+        return res
+      } else {
+        authStore.setError(res)
+        await Swal.fire('失敗', res.message || '寄送失敗', 'error')
+        return res
+      }
+    } catch (err) {
+      return handleApiError(err)
+    } finally {
+      authStore.setLoading(false)
+    }
+  }
+
   return {
     login,
     register,
@@ -153,6 +214,8 @@ export function useAuth() {
     isLoading,
     userName,
     userId,
+    verifyEmail,
+    resendEmail,
     setError: authStore.setError,
     clearError: authStore.clearError,
   }
