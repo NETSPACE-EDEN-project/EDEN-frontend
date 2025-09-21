@@ -15,7 +15,6 @@ export const useChatStore = defineStore('chat', () => {
 
   const isLoading = ref(false)
   const error = ref(null)
-  const connectionState = ref('disconnected')
 
   const currentRoomId = computed(() => currentRoom.value?.roomId)
   const hasChats = computed(() => chatList.value.length > 0)
@@ -30,9 +29,27 @@ export const useChatStore = defineStore('chat', () => {
   // ======= 訊息 =======
   const setMessages = (list) => (messages.value = list)
   const prependMessages = (list) => (messages.value = [...list, ...messages.value])
+
   const addMessage = (msg) => {
-    if (!messages.value.find((m) => m.id === msg.id)) messages.value.push(msg)
+    // 檢查是否已存在相同 ID 的訊息
+    if (msg.id && messages.value.find((m) => m.id === msg.id)) {
+      console.warn('訊息已存在，跳過重複新增:', msg.id)
+      return
+    }
+
+    // 如果沒有 ID，用 content + timestamp 做簡單去重
+    const isDuplicate = messages.value.some(
+      (m) =>
+        m.content === msg.content &&
+        m.senderId === msg.senderId &&
+        Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000, // 1秒內
+    )
+
+    if (!isDuplicate) {
+      messages.value.push(msg)
+    }
   }
+
   const updateLastMessage = (roomId, msg) => {
     const chat = chatList.value.find((c) => c.roomId === roomId)
     if (chat) {
@@ -43,18 +60,23 @@ export const useChatStore = defineStore('chat', () => {
 
   // ======= 在線 / 打字 =======
   const setOnlineUsers = (users) => (onlineUsers.value = users)
+
   const addTypingUser = (user) => {
-    if (!typingUsers.value.some((u) => u.userId === user.userId)) typingUsers.value.push(user)
+    if (!typingUsers.value.some((u) => u.userId === user.userId)) {
+      typingUsers.value.push(user)
+    }
   }
-  const removeTypingUser = (userId) =>
-    (typingUsers.value = typingUsers.value.filter((u) => u.userId !== userId))
+
+  const removeTypingUser = (userId) => {
+    typingUsers.value = typingUsers.value.filter((u) => u.userId !== userId)
+  }
+
   const clearTypingUsers = () => (typingUsers.value = [])
 
   // ======= Loading / Error =======
   const setLoading = (loading) => (isLoading.value = loading)
   const setError = (err) => (error.value = err)
   const clearError = () => (error.value = null)
-  const setConnectionState = (state) => (connectionState.value = state)
 
   // ======= 清除聊天室資料 =======
   const clearChatData = () => {
@@ -69,6 +91,7 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   return {
+    // 狀態
     chatList,
     currentRoom,
     roomInfo,
@@ -79,10 +102,12 @@ export const useChatStore = defineStore('chat', () => {
     typingUsers,
     isLoading,
     error,
-    connectionState,
+
+    // 計算屬性
     currentRoomId,
     hasChats,
 
+    // 方法
     setChatList,
     setCurrentRoom,
     setCurrentRoomInfo,
@@ -99,7 +124,6 @@ export const useChatStore = defineStore('chat', () => {
     setLoading,
     setError,
     clearError,
-    setConnectionState,
     clearChatData,
   }
 })
