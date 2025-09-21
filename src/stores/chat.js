@@ -12,6 +12,7 @@ export const useChatStore = defineStore('chat', () => {
   const typingUsers = ref([])
   const isLoading = ref(false)
   const error = ref(null)
+  const connectionState = ref('disconnected')
 
   const currentRoomId = computed(() => currentRoom.value?.roomId)
   const hasChats = computed(() => chatList.value.length > 0)
@@ -25,6 +26,9 @@ export const useChatStore = defineStore('chat', () => {
   }
   const clearError = () => {
     error.value = null
+  }
+  const setConnectionState = (state) => {
+    connectionState.value = state
   }
 
   // ======= 聊天室列表 =======
@@ -54,7 +58,21 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = [...list, ...messages.value]
   }
   const addMessage = (message) => {
-    messages.value.push(message)
+    if (message.id && messages.value.find((m) => m.id === message.id)) {
+      console.warn('訊息已存在，跳過重複新增:', message.id)
+      return
+    }
+
+    const isDuplicate = messages.value.some(
+      (m) =>
+        m.content === message.content &&
+        m.senderId === message.senderId &&
+        Math.abs(new Date(m.createdAt) - new Date(message.createdAt)) < 1000,
+    )
+
+    if (!isDuplicate) {
+      messages.value.push(message)
+    }
   }
 
   // ======= 在線用戶 =======
@@ -105,6 +123,7 @@ export const useChatStore = defineStore('chat', () => {
     typingUsers,
     isLoading,
     error,
+    connectionState,
     currentRoomId,
     hasChats,
 
@@ -117,6 +136,7 @@ export const useChatStore = defineStore('chat', () => {
     setMembers,
     setUserRole,
     setMessages,
+    setConnectionState,
     prependMessages,
     addMessage,
     setOnlineUsers,

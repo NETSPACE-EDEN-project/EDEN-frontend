@@ -38,13 +38,19 @@ export function useChat() {
 
   const initializeWebSocket = async () => {
     try {
+      chatStore.setConnectionState('connecting')
       const result = await websocketService.connect()
       if (result) {
         setupWebSocketListeners()
+        chatStore.setConnectionState('connected')
         return true
-      } else return false
+      } else {
+        chatStore.setConnectionState('disconnected')
+        return false
+      }
     } catch (err) {
-      console.error('WebSocket 連接失敗:', err)
+      console.error('WebSocket 連線失敗:', err)
+      chatStore.setConnectionState('disconnected')
       return false
     }
   }
@@ -127,17 +133,19 @@ export function useChat() {
               chatStore.setOnlineUsers(data.users || [])
             break
 
+          case 'auth_error':
+            console.error('WebSocket 認證錯誤:', data)
+            Swal.fire('連接錯誤', '認證失敗，請重新登入', 'error')
+            break
+
           case 'connection_established':
-            console.log('WebSocket 連接已建立')
+            console.log('WebSocket 連線已建立')
+            chatStore.setConnectionState('connected')
             break
 
           case 'connection_lost':
             console.log('WebSocket 連線丟失:', data)
-            break
-
-          case 'auth_error':
-            console.error('WebSocket 認證錯誤:', data)
-            Swal.fire('連接錯誤', '認證失敗，請重新登入', 'error')
+            chatStore.setConnectionState('disconnected')
             break
         }
       }
