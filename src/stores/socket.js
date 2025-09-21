@@ -1,19 +1,19 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { io } from 'socket.io-client'
+import Swal from 'sweetalert2'
 
 export const useSocketStore = defineStore('socket', () => {
-  // ===== state =====
   const socket = ref(null)
   const isConnected = ref(false)
-  const connectionState = ref('disconnected') // 'disconnected', 'connecting', 'connected'
+  const connectionState = ref('disconnected')
   const reconnectAttempts = ref(0)
   const maxReconnectAttempts = ref(5)
   const currentRoomId = ref(null)
-  const eventListeners = reactive(new Map())
+  const eventListeners = new Map() // 移除 reactive，因為不需要響應式
 
-  // ===== getters =====
   const canSendMessage = computed(() => isConnected.value && socket.value)
+
   const connectionStatus = computed(() => ({
     isConnected: isConnected.value,
     state: connectionState.value,
@@ -21,7 +21,7 @@ export const useSocketStore = defineStore('socket', () => {
     socketId: socket.value?.id,
   }))
 
-  // ===== actions =====
+  // ====== Socket connect ======
   const connect = async (
     url = import.meta.env.VITE_WS_URL || 'http://localhost:3000',
     options = {},
@@ -61,9 +61,7 @@ export const useSocketStore = defineStore('socket', () => {
           connectionState.value = 'connected'
           reconnectAttempts.value = 0
 
-          if (currentRoomId.value) {
-            joinRoom(currentRoomId.value)
-          }
+          if (currentRoomId.value) joinRoom(currentRoomId.value)
 
           resolve(true)
         })
@@ -71,12 +69,27 @@ export const useSocketStore = defineStore('socket', () => {
         socket.value.once('connect_error', (error) => {
           clearTimeout(timeout)
           connectionState.value = 'disconnected'
+          console.error('Socket connect_error:', error)
+          Swal.fire('連線失敗', '無法連接伺服器，請稍後再試', 'error')
           reject(error)
         })
       })
     } catch (error) {
       connectionState.value = 'disconnected'
       throw error
+    }
+  }
+
+  // ====== 統一事件轉發 ======
+  const emitEvent = (event, data) => {
+    if (eventListeners.has(event)) {
+      eventListeners.get(event).forEach((callback) => {
+        try {
+          callback(data)
+        } catch (err) {
+          console.error(`事件處理器錯誤 (${event}):`, err)
+        }
+      })
     }
   }
 
@@ -88,35 +101,35 @@ export const useSocketStore = defineStore('socket', () => {
       isConnected.value = true
       connectionState.value = 'connected'
       reconnectAttempts.value = 0
-      emit('connection_established')
+      emitEvent('connection_established')
     })
 
     socket.value.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason)
+      console.warn('Socket disconnected:', reason)
       isConnected.value = false
       connectionState.value = 'disconnected'
-      emit('connection_lost', reason)
+      emitEvent('connection_lost', reason)
 
-      if (reason !== 'io client disconnect') {
-        handleReconnection()
-      }
+      if (reason !== 'io client disconnect') handleReconnection()
     })
 
     socket.value.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
+      console.error('Socket connect_error:', error)
       isConnected.value = false
       connectionState.value = 'disconnected'
-      emit('connection_error', error)
+      emitEvent('connection_error', error)
       handleReconnection()
     })
 
     socket.value.on('error', (error) => {
       console.error('Socket error:', error)
-      emit('auth_error', error)
+      emitEvent('auth_error', error)
+      // 認證錯誤的 Swal 提示
+      Swal.fire('認證錯誤', '請重新登入', 'error')
     })
 
-    // Socket 事件轉發
-    const events = [
+    // 自動轉發事件
+    const socketEvents = [
       'new_message',
       'user_joined_room',
       'user_left_room',
@@ -131,7 +144,7 @@ export const useSocketStore = defineStore('socket', () => {
       'notification',
     ]
 
-    events.forEach((event) => {
+    socketEvents.forEach((event) => {
       socket.value.on(event, (response) => {
         if (response.success) {
           const mapEvent =
@@ -145,17 +158,16 @@ export const useSocketStore = defineStore('socket', () => {
               messages_marked_read: 'messages_read',
             }[event] || event
 
-          emit(mapEvent, response.data)
+          emitEvent(mapEvent, response.data)
         }
       })
     })
   }
 
+  // ====== 連線管理 ======
   const disconnect = () => {
-    if (socket.value) {
-      socket.value.disconnect()
-      socket.value = null
-    }
+    if (socket.value) socket.value.disconnect()
+    socket.value = null
     isConnected.value = false
     connectionState.value = 'disconnected'
     reconnectAttempts.value = 0
@@ -167,13 +179,12 @@ export const useSocketStore = defineStore('socket', () => {
   const handleReconnection = () => {
     if (reconnectAttempts.value >= maxReconnectAttempts.value) {
       console.error('達到最大重連次數')
-      emit('max_reconnect_attempts_reached')
+      emitEvent('max_reconnect_attempts_reached')
       return
     }
 
     reconnectAttempts.value++
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000)
-
     console.log(`將在 ${delay}ms 後嘗試第 ${reconnectAttempts.value} 次重連`)
 
     setTimeout(() => {
@@ -184,6 +195,7 @@ export const useSocketStore = defineStore('socket', () => {
     }, delay)
   }
 
+  // ====== 房間管理 ======
   const joinRoom = (roomId) => {
     if (!canSendMessage.value) throw new Error('Socket 未連線')
     socket.value.emit('join_room', { roomId })
@@ -194,13 +206,13 @@ export const useSocketStore = defineStore('socket', () => {
   const leaveRoom = (roomId) => {
     if (!canSendMessage.value) return
     socket.value.emit('leave_room', { roomId })
-
     if (currentRoomId.value === roomId) {
       currentRoomId.value = null
       sessionStorage.removeItem('currentRoomId')
     }
   }
 
+  // ====== 訊息發送 ======
   const sendMessage = (roomId, content, messageType = 'text', replyToId = null) => {
     if (!canSendMessage.value) throw new Error('Socket 未連線')
     socket.value.emit('send_message', { roomId, content, messageType, replyToId })
@@ -226,62 +238,54 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.emit('mark_messages_read', { roomId, messageIds })
   }
 
+  // ====== 事件監聽 API ======
   const on = (event, callback) => {
-    if (!eventListeners.has(event)) {
-      eventListeners.set(event, new Set())
-    }
+    if (!eventListeners.has(event)) eventListeners.set(event, new Set())
     eventListeners.get(event).add(callback)
   }
 
   const off = (event, callback) => {
-    if (eventListeners.has(event)) {
-      eventListeners.get(event).delete(callback)
-    }
+    if (eventListeners.has(event)) eventListeners.get(event).delete(callback)
   }
 
-  const offAll = () => {
-    eventListeners.clear()
-  }
+  const offAll = () => eventListeners.clear()
 
-  const emit = (event, data) => {
-    if (eventListeners.has(event)) {
-      eventListeners.get(event).forEach((callback) => {
-        try {
-          callback(data)
-        } catch (err) {
-          console.error(`事件處理器錯誤 (${event}):`, err)
-        }
-      })
-    }
-  }
-
-  // ===== return =====
   return {
+    // 狀態
     socket,
     isConnected,
     connectionState,
     reconnectAttempts,
     maxReconnectAttempts,
     currentRoomId,
-    eventListeners,
 
+    // 計算屬性
     canSendMessage,
     connectionStatus,
 
+    // 連線管理
     connect,
-    setupEventListeners,
     disconnect,
     handleReconnection,
+
+    // 房間管理
     joinRoom,
     leaveRoom,
+
+    // 訊息發送
     sendMessage,
     startTyping,
     stopTyping,
     getOnlineUsers,
     markMessagesRead,
+
+    // 事件監聽
     on,
     off,
     offAll,
-    emit,
+    emit: emitEvent,
+
+    // 內部方法（如果需要的話）
+    setupEventListeners,
   }
 })
