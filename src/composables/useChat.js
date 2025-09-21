@@ -1,11 +1,14 @@
+// composables/useChat.js
 import Swal from 'sweetalert2'
 import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chat.js'
 import { chatService } from '../services/chatService.js'
-import * as websocketService from '../services/websocketService.js'
+import { useSocket } from './useSocket.js'
 
 export function useChat() {
   const chatStore = useChatStore()
+  const socket = useSocket() // 使用全局 Socket 封裝
+
   const {
     chatList,
     currentRoom,
@@ -33,171 +36,129 @@ export function useChat() {
     return errorObj
   }
 
-  // ======= WebSocket 管理 =======
-  const wsHandlers = {}
-
-  const initializeWebSocket = async () => {
+  // ======= WebSocket 事件初始化 =======
+  const initializeSocket = async () => {
     try {
       chatStore.setConnectionState('connecting')
-      const result = await websocketService.connect()
-      if (result) {
-        setupWebSocketListeners()
+      await socket.connect()
+
+      // 訂閱全局事件，更新 store
+      socket.on('message_received', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) chatStore.addMessage(data)
+        chatStore.updateLastMessage(data.roomId, data)
+      })
+
+      socket.on('room_joined', async (data) => {
+        if (data.messages) chatStore.setMessages(data.messages)
+        if (data.onlineUsers) chatStore.setOnlineUsers(data.onlineUsers)
+
+        if (data.roomInfo) {
+          chatStore.setCurrentRoomInfo({
+            ...data.roomInfo,
+            members: data.roomInfo.members || [],
+            userRole: data.roomInfo.userRole || 'member',
+          })
+        } else {
+          // 若沒有 roomInfo，透過 API 再抓一次
+          const res = await chatService.getRoomInfoAPI(data.roomId)
+          if (res.success) {
+            chatStore.setCurrentRoomInfo(res.data.room)
+            chatStore.setMembers(res.data.members)
+            chatStore.setUserRole(res.data.userRole)
+          }
+        }
+      })
+
+      socket.on('user_joined', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) {
+          chatStore.setOnlineUsers([...onlineUsers.value, data])
+        }
+      })
+
+      socket.on('user_left', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) {
+          chatStore.setOnlineUsers(onlineUsers.value.filter((u) => u.userId !== data.userId))
+        }
+      })
+
+      socket.on('user_typing', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) chatStore.addTypingUser(data)
+      })
+
+      socket.on('user_stop_typing', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) chatStore.removeTypingUser(data.userId)
+      })
+
+      socket.on('online_users_updated', (data) => {
+        if (currentRoom.value?.roomId === data.roomId) chatStore.setOnlineUsers(data.users || [])
+      })
+
+      socket.on('auth_error', (data) => {
+        console.error('WebSocket 認證錯誤:', data)
+        Swal.fire('連接錯誤', '認證失敗，請重新登入', 'error')
+      })
+
+      socket.on('connection_established', () => {
         chatStore.setConnectionState('connected')
-        return true
-      } else {
+      })
+
+      socket.on('connection_lost', () => {
         chatStore.setConnectionState('disconnected')
-        return false
-      }
+      })
+
+      chatStore.setConnectionState('connected')
+      return true
     } catch (err) {
-      console.error('WebSocket 連線失敗:', err)
       chatStore.setConnectionState('disconnected')
+      console.error('初始化 Socket 失敗:', err)
       return false
     }
   }
 
-  const setupWebSocketListeners = () => {
-    const events = [
-      'message_received',
-      'room_joined',
-      'user_joined',
-      'user_left',
-      'user_typing',
-      'user_stop_typing',
-      'online_users_updated',
-      'connection_established',
-      'connection_lost',
-      'auth_error',
-    ]
-
-    events.forEach((event) => {
-      const handler = async (data) => {
-        switch (event) {
-          case 'message_received':
-            if (currentRoom.value?.roomId === data.roomId) chatStore.addMessage(data)
-            chatStore.updateLastMessage(data.roomId, data)
-            break
-
-          case 'room_joined':
-            console.log('成功加入房間:', data)
-
-            // 如果有訊息就更新 messages
-            if (data.messages) chatStore.setMessages(data.messages)
-
-            // 更新線上用戶
-            if (data.onlineUsers) chatStore.setOnlineUsers(data.onlineUsers)
-
-            // 同步房間資訊
-            if (data.roomInfo) {
-              chatStore.setCurrentRoomInfo({
-                ...data.roomInfo,
-                members: data.roomInfo.members || [],
-                userRole: data.roomInfo.userRole || 'member',
-              })
-            } else {
-              // 若沒有 roomInfo，透過 API 抓一次
-              const res = await chatService.getRoomInfoAPI(data.roomId)
-              if (res.success)
-                chatStore.setCurrentRoomInfo({
-                  ...res.data.room,
-                  members: res.data.members,
-                  userRole: res.data.userRole,
-                })
-            }
-
-            break
-
-          case 'user_joined':
-            if (currentRoom.value?.roomId === data.roomId) {
-              console.log(`用戶 ${data.username} 加入了房間`)
-              chatStore.setOnlineUsers([...onlineUsers.value, data])
-            }
-            break
-
-          case 'user_left':
-            if (currentRoom.value?.roomId === data.roomId) {
-              console.log(`用戶 ${data.username} 離開了房間`)
-              chatStore.setOnlineUsers(onlineUsers.value.filter((u) => u.userId !== data.userId))
-            }
-            break
-
-          case 'user_typing':
-            if (currentRoom.value?.roomId === data.roomId) chatStore.addTypingUser(data)
-            break
-
-          case 'user_stop_typing':
-            if (currentRoom.value?.roomId === data.roomId) chatStore.removeTypingUser(data.userId)
-            break
-
-          case 'online_users_updated':
-            if (currentRoom.value?.roomId === data.roomId)
-              chatStore.setOnlineUsers(data.users || [])
-            break
-
-          case 'auth_error':
-            console.error('WebSocket 認證錯誤:', data)
-            Swal.fire('連接錯誤', '認證失敗，請重新登入', 'error')
-            break
-
-          case 'connection_established':
-            console.log('WebSocket 連線已建立')
-            chatStore.setConnectionState('connected')
-            break
-
-          case 'connection_lost':
-            console.log('WebSocket 連線丟失:', data)
-            chatStore.setConnectionState('disconnected')
-            break
-        }
-      }
-
-      wsHandlers[event] = handler
-      websocketService.on(event, handler)
-    })
+  const cleanupSocket = () => {
+    socket.offAll() // 假設 useSocket 封裝了全移除方法
   }
 
-  const cleanupWebSocketListeners = () => {
-    Object.entries(wsHandlers).forEach(([event, handler]) => websocketService.off(event, handler))
-  }
-
-  const disconnectWebSocket = () => {
-    cleanupWebSocketListeners()
-    websocketService.disconnect()
+  const disconnectSocket = () => {
+    cleanupSocket()
+    socket.disconnect()
+    chatStore.setConnectionState('disconnected')
   }
 
   // ======= 消息操作 =======
   const sendMessage = async (content, messageType = 'text', replyToId = null) => {
     if (!currentRoom.value) throw new Error('沒有選擇聊天室')
     if (!content?.trim()) throw new Error('消息內容不能為空')
+
     try {
-      websocketService.sendMessage(currentRoom.value.roomId, content.trim(), messageType, replyToId)
+      socket.sendMessage(currentRoom.value.roomId, content.trim(), messageType, replyToId)
       return { success: true }
     } catch (err) {
       return { success: false, error: await handleApiError(err) }
     }
   }
 
-  const startTyping = () =>
-    currentRoom.value && websocketService.startTyping(currentRoom.value.roomId)
-  const stopTyping = () =>
-    currentRoom.value && websocketService.stopTyping(currentRoom.value.roomId)
+  const startTyping = () => currentRoom.value && socket.startTyping(currentRoom.value.roomId)
+  const stopTyping = () => currentRoom.value && socket.stopTyping(currentRoom.value.roomId)
   const markMessagesAsRead = (messageIds = []) =>
-    currentRoom.value && websocketService.markMessagesRead(currentRoom.value.roomId, messageIds)
+    currentRoom.value && socket.markMessagesRead(currentRoom.value.roomId, messageIds)
 
-  // ======= 房間管理 =======
+  // ======= 房間操作 =======
   const setCurrentRoom = async (room) => {
     if (currentRoom.value) {
-      websocketService.leaveRoom(currentRoom.value.roomId)
+      socket.leaveRoom(currentRoom.value.roomId)
       chatStore.clearTypingUsers()
     }
+
     chatStore.setCurrentRoom(room)
     if (room) {
-      websocketService.joinRoom(room.roomId)
-      websocketService.getOnlineUsers(room.roomId)
+      socket.joinRoom(room.roomId)
+      socket.getOnlineUsers(room.roomId)
     }
   }
 
   const clearChatData = () => {
-    if (currentRoom.value) websocketService.leaveRoom(currentRoom.value.roomId)
+    if (currentRoom.value) socket.leaveRoom(currentRoom.value.roomId)
     chatStore.clearChatData()
   }
 
@@ -302,9 +263,10 @@ export function useChat() {
   }
 
   return {
-    // WebSocket
-    initializeWebSocket,
-    disconnectWebSocket,
+    // Socket
+    initializeSocket,
+    cleanupSocket,
+    disconnectSocket,
     // 消息
     sendMessage,
     startTyping,
@@ -332,10 +294,5 @@ export function useChat() {
     isLoading,
     error,
     hasChats,
-    // store 方法
-    addMessage: chatStore.addMessage,
-    addTypingUser: chatStore.addTypingUser,
-    removeTypingUser: chatStore.removeTypingUser,
-    updateLastMessage: chatStore.updateLastMessage,
   }
 }

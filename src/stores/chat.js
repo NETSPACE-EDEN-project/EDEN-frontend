@@ -1,15 +1,18 @@
+// stores/chat.js
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useChatStore = defineStore('chat', () => {
   const chatList = ref([])
   const currentRoom = ref(null)
-  const roomInfo = ref(null) // 新增：房間資訊
-  const members = ref([]) // 新增：房間成員
-  const userRole = ref(null) // 新增：自己在房間的角色
+  const roomInfo = ref(null)
+  const members = ref([])
+  const userRole = ref(null)
+
   const messages = ref([])
   const onlineUsers = ref([])
   const typingUsers = ref([])
+
   const isLoading = ref(false)
   const error = ref(null)
   const connectionState = ref('disconnected')
@@ -17,90 +20,43 @@ export const useChatStore = defineStore('chat', () => {
   const currentRoomId = computed(() => currentRoom.value?.roomId)
   const hasChats = computed(() => chatList.value.length > 0)
 
-  // ======= 通用狀態方法 =======
-  const setLoading = (loading) => {
-    isLoading.value = loading
-  }
-  const setError = (errorMessage) => {
-    error.value = errorMessage
-  }
-  const clearError = () => {
-    error.value = null
-  }
-  const setConnectionState = (state) => {
-    connectionState.value = state
-  }
+  // ======= 聊天列表 / 房間 =======
+  const setChatList = (list) => (chatList.value = list)
+  const setCurrentRoom = (room) => (currentRoom.value = room)
+  const setCurrentRoomInfo = (info) => (roomInfo.value = info)
+  const setMembers = (list) => (members.value = list)
+  const setUserRole = (role) => (userRole.value = role)
 
-  // ======= 聊天室列表 =======
-  const setChatList = (chats) => {
-    chatList.value = chats
+  // ======= 訊息 =======
+  const setMessages = (list) => (messages.value = list)
+  const prependMessages = (list) => (messages.value = [...list, ...messages.value])
+  const addMessage = (msg) => {
+    if (!messages.value.find((m) => m.id === msg.id)) messages.value.push(msg)
   }
-  const setCurrentRoom = (room) => {
-    currentRoom.value = room
-  }
-
-  // ======= 房間資訊 =======
-  const setCurrentRoomInfo = (info) => {
-    roomInfo.value = info
-  }
-  const setMembers = (list) => {
-    members.value = list
-  }
-  const setUserRole = (role) => {
-    userRole.value = role
-  }
-
-  // ======= 訊息操作 =======
-  const setMessages = (list) => {
-    messages.value = list
-  }
-  const prependMessages = (list) => {
-    messages.value = [...list, ...messages.value]
-  }
-  const addMessage = (message) => {
-    if (message.id && messages.value.find((m) => m.id === message.id)) {
-      console.warn('訊息已存在，跳過重複新增:', message.id)
-      return
-    }
-
-    const isDuplicate = messages.value.some(
-      (m) =>
-        m.content === message.content &&
-        m.senderId === message.senderId &&
-        Math.abs(new Date(m.createdAt) - new Date(message.createdAt)) < 1000,
-    )
-
-    if (!isDuplicate) {
-      messages.value.push(message)
+  const updateLastMessage = (roomId, msg) => {
+    const chat = chatList.value.find((c) => c.roomId === roomId)
+    if (chat) {
+      chat.lastMessage = msg.content
+      chat.lastMessageAt = msg.createdAt
     }
   }
 
-  // ======= 在線用戶 =======
-  const setOnlineUsers = (users) => {
-    onlineUsers.value = users
-  }
-
-  // ======= 正在輸入用戶 =======
+  // ======= 在線 / 打字 =======
+  const setOnlineUsers = (users) => (onlineUsers.value = users)
   const addTypingUser = (user) => {
     if (!typingUsers.value.some((u) => u.userId === user.userId)) typingUsers.value.push(user)
   }
-  const removeTypingUser = (userId) => {
-    typingUsers.value = typingUsers.value.filter((u) => u.userId !== userId)
-  }
-  const clearTypingUsers = () => {
-    typingUsers.value = []
-  }
+  const removeTypingUser = (userId) =>
+    (typingUsers.value = typingUsers.value.filter((u) => u.userId !== userId))
+  const clearTypingUsers = () => (typingUsers.value = [])
 
-  // ======= 聊天室最後訊息更新 =======
-  const updateLastMessage = (roomId, message) => {
-    const chat = chatList.value.find((c) => c.roomId === roomId)
-    if (chat) {
-      chat.lastMessage = message.content
-      chat.lastMessageAt = message.createdAt
-    }
-  }
+  // ======= Loading / Error =======
+  const setLoading = (loading) => (isLoading.value = loading)
+  const setError = (err) => (error.value = err)
+  const clearError = () => (error.value = null)
+  const setConnectionState = (state) => (connectionState.value = state)
 
-  // ======= 清除聊天室相關資料 =======
+  // ======= 清除聊天室資料 =======
   const clearChatData = () => {
     currentRoom.value = null
     roomInfo.value = null
@@ -127,23 +83,23 @@ export const useChatStore = defineStore('chat', () => {
     currentRoomId,
     hasChats,
 
-    setLoading,
-    setError,
-    clearError,
     setChatList,
     setCurrentRoom,
     setCurrentRoomInfo,
     setMembers,
     setUserRole,
     setMessages,
-    setConnectionState,
     prependMessages,
     addMessage,
+    updateLastMessage,
     setOnlineUsers,
     addTypingUser,
     removeTypingUser,
     clearTypingUsers,
-    updateLastMessage,
+    setLoading,
+    setError,
+    clearError,
+    setConnectionState,
     clearChatData,
   }
 })
