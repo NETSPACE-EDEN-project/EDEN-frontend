@@ -4,7 +4,9 @@ import { defineStore } from 'pinia'
 export const useChatStore = defineStore('chat', () => {
   const chatList = ref([])
   const currentRoom = ref(null)
-  const currentRoomInfo = ref(null)
+  const roomInfo = ref(null) // 新增：房間資訊
+  const members = ref([]) // 新增：房間成員
+  const userRole = ref(null) // 新增：自己在房間的角色
   const messages = ref([])
   const onlineUsers = ref([])
   const typingUsers = ref([])
@@ -14,56 +16,64 @@ export const useChatStore = defineStore('chat', () => {
   const currentRoomId = computed(() => currentRoom.value?.roomId)
   const hasChats = computed(() => chatList.value.length > 0)
 
+  // ======= 通用狀態方法 =======
   const setLoading = (loading) => {
     isLoading.value = loading
   }
-
   const setError = (errorMessage) => {
     error.value = errorMessage
   }
-
   const clearError = () => {
     error.value = null
   }
 
+  // ======= 聊天室列表 =======
   const setChatList = (chats) => {
     chatList.value = chats
   }
-
   const setCurrentRoom = (room) => {
     currentRoom.value = room
   }
 
-  const setMessages = (messageList) => {
-    messages.value = messageList
+  // ======= 房間資訊 =======
+  const setCurrentRoomInfo = (info) => {
+    roomInfo.value = info
+  }
+  const setMembers = (list) => {
+    members.value = list
+  }
+  const setUserRole = (role) => {
+    userRole.value = role
   }
 
-  const prependMessages = (messageList) => {
-    messages.value = [...messageList, ...messages.value]
+  // ======= 訊息操作 =======
+  const setMessages = (list) => {
+    messages.value = list
   }
-
+  const prependMessages = (list) => {
+    messages.value = [...list, ...messages.value]
+  }
   const addMessage = (message) => {
     messages.value.push(message)
   }
 
+  // ======= 在線用戶 =======
   const setOnlineUsers = (users) => {
     onlineUsers.value = users
   }
 
+  // ======= 正在輸入用戶 =======
   const addTypingUser = (user) => {
-    if (!typingUsers.value.some((u) => u.userId === user.userId)) {
-      typingUsers.value.push(user)
-    }
+    if (!typingUsers.value.some((u) => u.userId === user.userId)) typingUsers.value.push(user)
   }
-
   const removeTypingUser = (userId) => {
     typingUsers.value = typingUsers.value.filter((u) => u.userId !== userId)
   }
-
   const clearTypingUsers = () => {
     typingUsers.value = []
   }
 
+  // ======= 聊天室最後訊息更新 =======
   const updateLastMessage = (roomId, message) => {
     const chat = chatList.value.find((c) => c.roomId === roomId)
     if (chat) {
@@ -72,13 +82,12 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const setCurrentRoomInfo = (roomInfo) => {
-    currentRoomInfo.value = roomInfo
-  }
-
+  // ======= 清除聊天室相關資料 =======
   const clearChatData = () => {
     currentRoom.value = null
-    currentRoomInfo.value = null
+    roomInfo.value = null
+    members.value = []
+    userRole.value = null
     messages.value = []
     onlineUsers.value = []
     clearTypingUsers()
@@ -88,7 +97,9 @@ export const useChatStore = defineStore('chat', () => {
   return {
     chatList,
     currentRoom,
-    currentRoomInfo,
+    roomInfo,
+    members,
+    userRole,
     messages,
     onlineUsers,
     typingUsers,
@@ -103,6 +114,8 @@ export const useChatStore = defineStore('chat', () => {
     setChatList,
     setCurrentRoom,
     setCurrentRoomInfo,
+    setMembers,
+    setUserRole,
     setMessages,
     prependMessages,
     addMessage,

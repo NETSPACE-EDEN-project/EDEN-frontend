@@ -70,7 +70,15 @@ export const useAuthStore = defineStore('auth', () => {
     return '用戶'
   })
 
-  const userId = computed(() => user.value?.id)
+  // 修復 userId 計算邏輯
+  const userId = computed(() => {
+    if (user.value?.id) return user.value.id
+
+    const cookieUser = getUserFromCookie()
+    if (cookieUser?.id) return cookieUser.id
+
+    return null
+  })
 
   const setLoading = (loading) => {
     isLoading.value = loading

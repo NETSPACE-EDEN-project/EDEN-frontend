@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO 連接測試</title>
+  </head>
+  <body>
+    <h1>Socket.IO 連接測試</h1>
+    <div id="status">準備連接...</div>
+    <div id="logs"></div>
+
+    <script>
+      function log(message) {
+        console.log(message)
+        document.getElementById('logs').innerHTML +=
+          '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>'
+      }
+
+      // 首先測試基本的 HTTP 連接
+      log('測試基本 HTTP 連接...')
+      fetch('http://localhost:3000')
+        .then((response) => response.text())
+        .then((data) => {
+          log('HTTP 連接成功: ' + data)
+          startSocketTest()
+        })
+        .catch((error) => {
+          log('HTTP 連接失敗: ' + error.message)
+          document.getElementById('status').innerHTML = 'HTTP 連接失敗，請檢查服務器是否運行'
+        })
+
+      function startSocketTest() {
+        log('開始 Socket.IO 連接測試...')
+
+        // 動態載入 Socket.IO
+        const script = document.createElement('script')
+        script.src = 'http://localhost:3000/socket.io/socket.io.js'
+        script.onload = function () {
+          log('Socket.IO 腳本載入成功')
+
+          const socket = io('http://localhost:3000', {
+            transports: ['polling'],
+            withCredentials: true,
+            timeout: 10000,
+          })
+
+          socket.on('connect', () => {
+            log('Socket.IO 連接成功！Socket ID: ' + socket.id)
+            document.getElementById('status').innerHTML = '連接成功！'
+          })
+
+          socket.on('connect_error', (error) => {
+            log('Socket.IO 連接錯誤: ' + error.message)
+            document.getElementById('status').innerHTML = '連接失敗'
+          })
+
+          socket.on('disconnect', (reason) => {
+            log('Socket.IO 斷開: ' + reason)
+          })
+        }
+
+        script.onerror = function () {
+          log('Socket.IO 腳本載入失敗')
+          document.getElementById('status').innerHTML = 'Socket.IO 腳本載入失敗'
+        }
+
+        document.head.appendChild(script)
+      }
+    </script>
+  </body>
+</html>

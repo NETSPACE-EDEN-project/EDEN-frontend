@@ -138,32 +138,72 @@ const setupEventListeners = () => {
 
 // ========== 連線 ==========
 const connect = async () => {
+  console.log('websocketService.connect 被調用')
+
   if (isConnected && socket) {
+    console.log('已經連接，直接返回 true')
     return true
   }
 
   console.log('正在建立 WebSocket 連接...')
+  console.log('連接 URL:', config.url)
+  console.log('連接選項:', config.options)
 
-  socket = io(config.url, { ...config.options })
-  setupEventListeners()
+  try {
+    socket = io(config.url, { ...config.options })
+    console.log('io() 調用完成，socket 對象:', socket)
+    console.log('socket.id:', socket.id)
+    console.log('socket.connected:', socket.connected)
 
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('連接超時')), config.options.timeout)
-
-    socket.once('connect', () => {
-      clearTimeout(timeout)
-      isConnected = true
-      reconnectAttempts = 0
-      console.log('WebSocket 連接成功')
-      resolve(true)
+    // 立即添加事件監聽器來捕獲連接過程
+    socket.on('connect', () => {
+      console.log('Socket.IO connect 事件觸發')
     })
 
-    socket.once('connect_error', (error) => {
-      clearTimeout(timeout)
-      console.error('WebSocket 連接失敗:', error.message)
-      reject(error)
+    socket.on('connect_error', (error) => {
+      console.log('Socket.IO connect_error 事件觸發:', error)
     })
-  })
+
+    socket.on('disconnect', (reason) => {
+      console.log('Socket.IO disconnect 事件觸發:', reason)
+    })
+
+    // 手動嘗試連接
+    console.log('手動觸發連接...')
+    socket.connect()
+    console.log('socket.connect() 調用完成')
+
+    setupEventListeners()
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.log('連接超時！')
+        console.log('最終 socket 狀態:')
+        console.log('- socket.id:', socket?.id)
+        console.log('- socket.connected:', socket?.connected)
+        console.log('- socket.disconnected:', socket?.disconnected)
+        reject(new Error('連接超時'))
+      }, config.options.timeout)
+
+      socket.once('connect', () => {
+        clearTimeout(timeout)
+        isConnected = true
+        reconnectAttempts = 0
+        console.log('WebSocket 連接成功')
+        resolve(true)
+      })
+
+      socket.once('connect_error', (error) => {
+        clearTimeout(timeout)
+        console.error('WebSocket 連接失敗:', error.message)
+        console.error('錯誤詳情:', error)
+        reject(error)
+      })
+    })
+  } catch (error) {
+    console.error('創建 socket 時發生錯誤:', error)
+    throw error
+  }
 }
 
 // ========== 發送事件 ==========
