@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from './stores/auth.js'
@@ -12,7 +12,8 @@ import LoadingOverlay from './components/LoadingOverlay.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const { verifyAuthStatus } = useAuth()
+const socketStore = useSocketStore()
+const { verifyAuthStatus, checkTokenStatus } = useAuth()
 
 const showNavigation = computed(() => {
   const hideNavRoutes = ['/auth', '/login', '/register']
@@ -24,6 +25,32 @@ const mainClass = computed(() => {
   return noPaddingRoutes.includes(route.path) ? '' : 'pt-16'
 })
 
+let tokenCheckInterval = null
+
+const startTokenCheckInterval = () => {
+  if (tokenCheckInterval) return
+
+  tokenCheckInterval = setInterval(
+    async () => {
+      if (authStore.isAuthenticated) {
+        console.log('定時檢查 token...')
+        const result = await checkTokenStatus()
+        if (!result) {
+          router.push('/auth')
+        }
+      }
+    },
+    15 * 60 * 1000,
+  )
+}
+
+const stopTokenCheckInterval = () => {
+  if (tokenCheckInterval) {
+    clearInterval(tokenCheckInterval)
+    tokenCheckInterval = null
+  }
+}
+
 const initializeApp = async () => {
   authStore.setLoading(true)
   try {
@@ -32,6 +59,7 @@ const initializeApp = async () => {
 
     if (authStore.isAuthenticated) {
       await socketStore.connect()
+      startTokenCheckInterval()
     }
   } catch (error) {
     console.error('初始化失敗:', error)
@@ -41,8 +69,23 @@ const initializeApp = async () => {
   }
 }
 
+watch(
+  () => authStore.isAuthenticated,
+  (newVal) => {
+    if (newVal) {
+      startTokenCheckInterval()
+    } else {
+      stopTokenCheckInterval()
+    }
+  },
+)
+
 onMounted(() => {
   initializeApp()
+})
+
+onUnmounted(() => {
+  stopTokenCheckInterval()
 })
 </script>
 

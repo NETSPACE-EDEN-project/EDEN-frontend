@@ -166,6 +166,32 @@ export function useAuth() {
     }
   }
 
+  const checkTokenStatus = async () => {
+    if (!authStore.isAuthenticated) return false
+
+    try {
+      const res = await authService.refreshTokenAPI()
+      if (res.success) {
+        if (res.data?.refreshed) {
+          console.log('Token 已主動刷新')
+          authStore.initializeAuth()
+        }
+        return true
+      } else {
+        if (res.code === 'NoRefreshToken') {
+          return true
+        }
+        authStore.clearAuth()
+        return false
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        authStore.clearAuth()
+      }
+      return false
+    }
+  }
+
   const verifyEmail = async (token) => {
     if (!token) {
       const errObj = { success: false, error: 'InvalidToken', message: '缺少驗證 Token' }
@@ -233,6 +259,7 @@ export function useAuth() {
     logout,
     getCurrentUser,
     verifyAuthStatus,
+    checkTokenStatus,
     user,
     isAuthenticated,
     isLoading,
