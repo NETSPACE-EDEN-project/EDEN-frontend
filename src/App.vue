@@ -1,14 +1,16 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from './stores/auth.js'
+import { useSocketStore } from './stores/socket.js'
 import { useAuth } from './composables/useAuth.js'
 
 import Navbar from './components/Navbar.vue'
 import LoadingOverlay from './components/LoadingOverlay.vue'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const { verifyAuthStatus } = useAuth()
 
@@ -25,14 +27,12 @@ const mainClass = computed(() => {
 const initializeApp = async () => {
   authStore.setLoading(true)
   try {
-    console.log('App initializing...')
     authStore.initializeAuth()
-
-    console.log('Current auth state:', authStore.isAuthenticated)
-    console.log('Calling verifyAuthStatus...')
-
     await verifyAuthStatus()
-    console.log('After verify, auth state:', authStore.isAuthenticated)
+
+    if (authStore.isAuthenticated) {
+      await socketStore.connect()
+    }
   } catch (error) {
     console.error('初始化失敗:', error)
     router.push('/auth')

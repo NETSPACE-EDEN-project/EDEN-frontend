@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { useSocketStore } from './socket.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -102,6 +103,9 @@ export const useAuthStore = defineStore('auth', () => {
     clearError()
     isLoggedOut.value = true
     clearAuthCookies()
+    const socketStore = useSocketStore()
+    socketStore.offAll()
+    socketStore.disconnect()
   }
 
   const updateUser = (userData) => {
