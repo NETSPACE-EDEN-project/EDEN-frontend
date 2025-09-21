@@ -42,7 +42,10 @@ export function useChat() {
       chatStore.setConnectionState('connecting')
       await socket.connect()
 
-      // 訂閱全局事件，更新 store
+      // 清掉舊事件，避免重複監聽
+      socket.offAll()
+
+      // ===== 訂閱 Socket 事件 =====
       socket.on('message_received', (data) => {
         if (currentRoom.value?.roomId === data.roomId) chatStore.addMessage(data)
         chatStore.updateLastMessage(data.roomId, data)
@@ -59,7 +62,6 @@ export function useChat() {
             userRole: data.roomInfo.userRole || 'member',
           })
         } else {
-          // 若沒有 roomInfo，透過 API 再抓一次
           const res = await chatService.getRoomInfoAPI(data.roomId)
           if (res.success) {
             chatStore.setCurrentRoomInfo(res.data.room)
@@ -106,6 +108,24 @@ export function useChat() {
         chatStore.setConnectionState('disconnected')
       })
 
+      // ===== 自動恢復刷新前房間 =====
+      const lastRoomId = socket.currentRoomId
+      if (lastRoomId) {
+        const res = await chatService.getRoomInfoAPI(lastRoomId)
+        if (res.success) {
+          chatStore.setCurrentRoom(res.data.room)
+          chatStore.setCurrentRoomInfo(res.data.room)
+          chatStore.setMembers(res.data.members)
+          chatStore.setUserRole(res.data.userRole)
+
+          socket.joinRoom(lastRoomId)
+          socket.getOnlineUsers(lastRoomId)
+
+          // 載入最近訊息
+          await getChatMessages(lastRoomId, { page: 1, limit: 50 })
+        }
+      }
+
       chatStore.setConnectionState('connected')
       return true
     } catch (err) {
@@ -116,7 +136,7 @@ export function useChat() {
   }
 
   const cleanupSocket = () => {
-    socket.offAll() // 假設 useSocket 封裝了全移除方法
+    socket.offAll()
   }
 
   const disconnectSocket = () => {
