@@ -28,8 +28,10 @@ export const useSocketStore = defineStore('socket', () => {
   ) => {
     if (socket.value && isConnected.value) return true
 
-    const authToken = document.cookie.includes('auth_token')
-    if (!authToken) {
+    const { useAuthStore } = await import('../stores/auth')
+    const authStore = useAuthStore()
+
+    if (!authStore.isAuthenticated) {
       console.warn('尚未登入，不建立 WebSocket 連線')
       return false
     }
