@@ -23,11 +23,11 @@ const emit = defineEmits([
 
 const { chatList, setCurrentRoom, getChatMessages, isLoading, clearChatData } = useChat()
 
-const selectChat = async (chat) => {
+const selectChat = async (chatroom) => {
   clearChatData()
-  setCurrentRoom(chat)
-  await getChatMessages(chat.roomId)
-  emit('chat-selected', chat)
+  setCurrentRoom(chatroom)
+  await getChatMessages(chatroom.roomId)
+  emit('chat-selected', chatroom)
 }
 </script>
 
@@ -81,10 +81,10 @@ const selectChat = async (chat) => {
       </div>
       <div v-else class="flex-1 p-2 overflow-y-auto">
         <ChatListItem
-          v-for="chat in chatList"
-          :key="chat.roomId"
-          :chat="chat"
-          @click="selectChat(chat)"
+          v-for="chatroom in chatList"
+          :key="chatroom.roomId"
+          :chatroom="chatroom"
+          @click="selectChat(chatroom)"
         />
       </div>
     </div>

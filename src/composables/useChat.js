@@ -9,7 +9,7 @@ export function useChat() {
   const chatStore = useChatStore()
   const socketStore = useSocketStore()
 
-  // Chat Store 狀態
+  // Store 狀態
   const {
     chatList,
     currentRoom,
@@ -24,12 +24,11 @@ export function useChat() {
     hasChats,
   } = storeToRefs(chatStore)
 
-  // Socket Store 狀態
   const { isConnected, connectionState, connectionStatus } = storeToRefs(socketStore)
 
   // ======= 通用錯誤處理 =======
   const handleApiError = async (err) => {
-    console.error('聊天 API 呼叫失敗', err)
+    console.error('API 呼叫失敗', err)
     const errorObj = err.response?.data || {
       success: false,
       error: 'UnknownError',
@@ -40,15 +39,13 @@ export function useChat() {
     return errorObj
   }
 
-  // ======= Socket 初始化 =======
+  // ======= Socket 初始化 & 監聽 =======
   const initializeSocket = async () => {
     try {
       await socketStore.connect()
-
-      // 設置事件監聽器
       setupSocketListeners()
 
-      // 檢查是否有儲存的房間ID，自動恢復
+      // 恢復上次的房間狀態
       const savedRoomId = sessionStorage.getItem('currentRoomId')
       if (savedRoomId) {
         await restoreRoom(savedRoomId)
@@ -62,15 +59,20 @@ export function useChat() {
   }
 
   const setupSocketListeners = () => {
-    socketStore.off('message_received')
-    socketStore.off('room_joined')
-    socketStore.off('user_joined')
-    socketStore.off('user_left')
-    socketStore.off('user_typing')
-    socketStore.off('user_stop_typing')
-    socketStore.off('online_users_updated')
-    socketStore.off('auth_error')
-    // 收到新訊息
+    // 清理舊監聽器
+    const events = [
+      'message_received',
+      'room_joined',
+      'user_joined',
+      'user_left',
+      'user_typing',
+      'user_stop_typing',
+      'online_users_updated',
+      'auth_error',
+    ]
+    events.forEach((event) => socketStore.off(event))
+
+    // 設定新監聽器
     socketStore.on('message_received', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.addMessage(data)
@@ -78,22 +80,17 @@ export function useChat() {
       chatStore.updateLastMessage(data.roomId, data)
     })
 
-    // 成功加入房間
     socketStore.on('room_joined', async (data) => {
       if (data.messages) chatStore.setMessages(data.messages)
       if (data.onlineUsers) chatStore.setOnlineUsers(data.onlineUsers)
 
-      // 如果沒有房間詳細資訊，透過 API 取得
       if (data.roomInfo) {
-        chatStore.setCurrentRoomInfo(data.roomInfo)
-        chatStore.setMembers(data.roomInfo.members || [])
-        chatStore.setUserRole(data.roomInfo.userRole || 'member')
+        updateRoomData(data.roomInfo)
       } else {
         await fetchRoomInfo(data.roomId)
       }
     })
 
-    // 用戶加入房間
     socketStore.on('user_joined', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         const newUsers = [...onlineUsers.value.filter((u) => u.userId !== data.userId), data]
@@ -101,56 +98,80 @@ export function useChat() {
       }
     })
 
-    // 用戶離開房間
     socketStore.on('user_left', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.setOnlineUsers(onlineUsers.value.filter((u) => u.userId !== data.userId))
       }
     })
 
-    // 用戶開始輸入
     socketStore.on('user_typing', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.addTypingUser(data)
       }
     })
 
-    // 用戶停止輸入
     socketStore.on('user_stop_typing', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.removeTypingUser(data.userId)
       }
     })
 
-    // 線上用戶更新
     socketStore.on('online_users_updated', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.setOnlineUsers(data.users || [])
       }
     })
 
-    // 認證錯誤
     socketStore.on('auth_error', (data) => {
       console.error('WebSocket 認證錯誤:', data)
       Swal.fire('連接錯誤', '認證失敗，請重新登入', 'error')
     })
   }
 
-  // 恢復房間狀態（刷新後自動加入）
+  const cleanupSocket = () => socketStore.offAll()
+  const disconnectSocket = () => {
+    cleanupSocket()
+    socketStore.disconnect()
+  }
+
+  // ======= 房間數據更新 =======
+  const updateRoomData = (roomData) => {
+    const { room, members: roomMembers, userRole: role } = roomData
+
+    chatStore.setCurrentRoomInfo(room || roomData)
+    chatStore.setMembers(roomMembers || roomData.members || [])
+    chatStore.setUserRole(role || roomData.userRole || 'member')
+
+    // 設置當前房間基本資訊
+    const roomInfo = room || roomData
+    chatStore.setCurrentRoom({
+      roomId: roomInfo.id || roomInfo.roomId,
+      roomName: roomInfo.roomName,
+      roomType: roomInfo.roomType,
+      memberCount: (roomMembers || roomData.members || []).length,
+      isGroup: roomInfo.roomType === 'group',
+    })
+  }
+
+  const fetchRoomInfo = async (roomId) => {
+    try {
+      const res = await chatService.getRoomInfoAPI(roomId)
+      if (res.success) {
+        updateRoomData(res.data)
+      }
+    } catch (err) {
+      console.error('取得房間資訊失敗:', err)
+    }
+  }
+
+  // ======= 房間操作 =======
   const restoreRoom = async (roomId) => {
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
       if (res.success) {
-        chatStore.setCurrentRoom({ roomId, roomName: res.data.room.roomName })
-        chatStore.setCurrentRoomInfo(res.data.room)
-        chatStore.setMembers(res.data.members)
-        chatStore.setUserRole(res.data.userRole)
-
-        // Socket 加入房間
+        updateRoomData(res.data)
         socketStore.joinRoom(roomId)
         socketStore.getOnlineUsers(roomId)
-
-        // 載入最近訊息
         await getChatMessages(roomId, { page: 1, limit: 50 })
       }
     } catch (err) {
@@ -159,26 +180,46 @@ export function useChat() {
     }
   }
 
-  const fetchRoomInfo = async (roomId) => {
+  const joinRoom = async (roomId) => {
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
       if (res.success) {
-        chatStore.setCurrentRoomInfo(res.data.room)
-        chatStore.setMembers(res.data.members)
-        chatStore.setUserRole(res.data.userRole)
+        updateRoomData(res.data)
+        socketStore.joinRoom(roomId)
+        socketStore.getOnlineUsers(roomId)
+        await getChatMessages(roomId, { page: 1, limit: 50 })
       }
     } catch (err) {
-      console.error('取得房間資訊失敗:', err)
+      console.error('加入房間失敗:', err)
+      throw err // 讓上層處理錯誤
     }
   }
 
-  const cleanupSocket = () => {
-    socketStore.offAll()
+  const setCurrentRoom = async (room) => {
+    // 離開當前房間
+    if (currentRoom.value) {
+      socketStore.leaveRoom(currentRoom.value.roomId)
+      chatStore.clearTypingUsers()
+    }
+
+    if (room) {
+      // 加入新房間
+      await joinRoom(room.roomId)
+      sessionStorage.setItem('currentRoomId', room.roomId)
+    } else {
+      // 清空房間狀態
+      chatStore.setCurrentRoom(null)
+      chatStore.clearChatData()
+      sessionStorage.removeItem('currentRoomId')
+    }
   }
 
-  const disconnectSocket = () => {
-    cleanupSocket()
-    socketStore.disconnect()
+  const clearChatData = () => {
+    if (currentRoom.value) {
+      socketStore.leaveRoom(currentRoom.value.roomId)
+    }
+    chatStore.clearChatData()
+    sessionStorage.removeItem('currentRoomId')
   }
 
   // ======= 訊息操作 =======
@@ -212,36 +253,6 @@ export function useChat() {
     }
   }
 
-  // ======= 房間操作 =======
-  const setCurrentRoom = async (room) => {
-    // 離開當前房間
-    if (currentRoom.value) {
-      socketStore.leaveRoom(currentRoom.value.roomId)
-      chatStore.clearTypingUsers()
-    }
-
-    // 設置新房間
-    chatStore.setCurrentRoom(room)
-
-    if (room) {
-      // 加入新房間
-      socketStore.joinRoom(room.roomId)
-      socketStore.getOnlineUsers(room.roomId)
-
-      // 載入房間訊息
-      await getChatMessages(room.roomId, { page: 1, limit: 50 })
-    } else {
-      sessionStorage.removeItem('currentRoomId')
-    }
-  }
-
-  const clearChatData = () => {
-    if (currentRoom.value) {
-      socketStore.leaveRoom(currentRoom.value.roomId)
-    }
-    chatStore.clearChatData()
-  }
-
   // ======= API 操作 =======
   const getChatList = async () => {
     chatStore.setLoading(true)
@@ -249,7 +260,7 @@ export function useChat() {
     try {
       const res = await chatService.getChatListAPI()
       if (res.success) {
-        chatStore.setChatList(res.data.chats)
+        chatStore.setChatList(res.data.chatrooms)
       } else {
         await Swal.fire('載入失敗', res.message || '無法載入聊天列表', 'error')
       }
@@ -270,11 +281,10 @@ export function useChat() {
     chatStore.clearError()
     try {
       const res = await chatService.searchUsersAPI(keyword.trim())
-      if (res.success) {
-        return res.data.users
-      } else {
+      if (!res.success) {
         await Swal.fire('搜尋失敗', res.message || '搜尋用戶失敗', 'error')
       }
+      return res
     } catch (err) {
       return handleApiError(err)
     } finally {
@@ -293,6 +303,15 @@ export function useChat() {
       const res = await chatService.startPrivateChatAPI(targetUserId)
       if (res.success) {
         await Swal.fire('成功', res.message || '私人聊天室創建成功', 'success')
+        // 自動跳轉到新創建的聊天室
+        if (res.data.roomId) {
+          await setCurrentRoom({
+            roomId: res.data.roomId,
+            roomName: res.data.roomName,
+            roomType: 'private',
+            isGroup: false,
+          })
+        }
       }
       return res
     } catch (err) {
@@ -316,6 +335,15 @@ export function useChat() {
       const res = await chatService.createGroupChatAPI(groupData)
       if (res.success) {
         await Swal.fire('成功', res.message || '群組聊天室創建成功', 'success')
+        // 自動跳轉到新創建的群組
+        if (res.data.roomId) {
+          await setCurrentRoom({
+            roomId: res.data.roomId,
+            roomName: res.data.roomName,
+            roomType: 'group',
+            isGroup: true,
+          })
+        }
       }
       return res
     } catch (err) {
@@ -340,7 +368,10 @@ export function useChat() {
         } else {
           chatStore.prependMessages(res.data.messages)
         }
-        return { messages: res.data.messages, pagination: res.data.pagination }
+        return {
+          messages: res.data.messages,
+          pagination: res.data.pagination,
+        }
       } else {
         await Swal.fire('載入失敗', res.message || '載入訊息失敗', 'error')
       }
@@ -361,14 +392,11 @@ export function useChat() {
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
       if (res.success) {
-        const { room, members: roomMembers, userRole: role } = res.data
-        chatStore.setCurrentRoomInfo(room)
-        chatStore.setMembers(roomMembers)
-        chatStore.setUserRole(role)
-        return res
+        updateRoomData(res.data)
       } else {
         await Swal.fire('載入失敗', res.message || '載入房間資訊失敗', 'error')
       }
+      return res
     } catch (err) {
       return handleApiError(err)
     } finally {
@@ -377,7 +405,7 @@ export function useChat() {
   }
 
   return {
-    // Socket 狀態（響應式）
+    // Socket 狀態
     isConnected,
     connectionState,
     connectionStatus,
@@ -387,15 +415,17 @@ export function useChat() {
     cleanupSocket,
     disconnectSocket,
 
+    // 房間操作
+    setCurrentRoom,
+    clearChatData,
+    joinRoom,
+    fetchRoomInfo,
+
     // 訊息操作
     sendMessage,
     startTyping,
     stopTyping,
     markMessagesAsRead,
-
-    // 房間操作
-    setCurrentRoom,
-    clearChatData,
 
     // API 操作
     getChatList,

@@ -23,14 +23,10 @@ const handleSearch = async () => {
   isSearching.value = true
   try {
     const result = await searchUsers(searchKeyword.value)
+    console.log('完整的 API 回應:', result)
+
     if (result.success) {
       searchResults.value = result.data.users || []
-      // 調試：打印搜索結果來查看用戶對象結構
-      console.log('Search results:', searchResults.value)
-      if (searchResults.value.length > 0) {
-        console.log('First user object:', searchResults.value[0])
-        console.log('Available properties:', Object.keys(searchResults.value[0]))
-      }
     }
   } finally {
     isSearching.value = false
