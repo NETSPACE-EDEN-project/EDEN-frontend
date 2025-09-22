@@ -45,9 +45,6 @@ export function useChat() {
     try {
       await socketStore.connect()
 
-      // 清理舊事件監聽器
-      socketStore.offAll()
-
       // 設置事件監聽器
       setupSocketListeners()
 
@@ -65,6 +62,14 @@ export function useChat() {
   }
 
   const setupSocketListeners = () => {
+    socketStore.off('message_received')
+    socketStore.off('room_joined')
+    socketStore.off('user_joined')
+    socketStore.off('user_left')
+    socketStore.off('user_typing')
+    socketStore.off('user_stop_typing')
+    socketStore.off('online_users_updated')
+    socketStore.off('auth_error')
     // 收到新訊息
     socketStore.on('message_received', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
@@ -225,6 +230,8 @@ export function useChat() {
 
       // 載入房間訊息
       await getChatMessages(room.roomId, { page: 1, limit: 50 })
+    } else {
+      sessionStorage.removeItem('currentRoomId')
     }
   }
 

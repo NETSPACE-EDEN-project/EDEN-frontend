@@ -19,6 +19,7 @@ const api = axios.create({
 
 let router = null
 let authStore = null
+let isRefreshing = false
 
 const importDependencies = async () => {
   if (!router) {
@@ -45,14 +46,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   async (response) => {
     const tokenRefreshed = response.headers['x-token-refreshed']
-    if (tokenRefreshed === 'true') {
+    if (tokenRefreshed === 'true' && !isRefreshing) {
+      isRefreshing = true
       console.log('Token 已自動刷新')
 
-      await importDependencies()
+      try {
+        await importDependencies()
 
-      if (authStore) {
-        authStore.initializeAuth()
-        console.log('認證狀態已同步')
+        if (authStore) {
+          await authStore.initializeAuth()
+          console.log('認證狀態已同步')
+        }
+      } finally {
+        isRefreshing = false
       }
     }
 

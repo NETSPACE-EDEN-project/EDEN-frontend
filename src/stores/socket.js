@@ -93,7 +93,11 @@ export const useSocketStore = defineStore('socket', () => {
     }
   }
 
+  let isListenersSetup = false
+
   const setupEventListeners = () => {
+    if (isListenersSetup) return
+    isListenersSetup = true
     if (!socket.value) return
 
     socket.value.on('connect', () => {
@@ -174,6 +178,7 @@ export const useSocketStore = defineStore('socket', () => {
     currentRoomId.value = null
     eventListeners.clear()
     sessionStorage.removeItem('currentRoomId')
+    isListenersSetup = false
   }
 
   const handleReconnection = () => {
