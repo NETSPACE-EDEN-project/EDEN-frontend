@@ -71,11 +71,19 @@ const initializeApp = async () => {
 
 watch(
   () => authStore.isAuthenticated,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
       startTokenCheckInterval()
+      if (!socketStore.isConnected) {
+        try {
+          await socketStore.connect()
+        } catch (err) {
+          console.error('登入後自動連線失敗:', err)
+        }
+      }
     } else {
       stopTokenCheckInterval()
+      socketStore.disconnect()
     }
   },
 )

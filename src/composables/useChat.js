@@ -17,8 +17,6 @@ export function useChat() {
     members,
     userRole,
     messages,
-    onlineUsers,
-    typingUsers,
     isLoading,
     error,
     hasChats,
@@ -62,16 +60,7 @@ export function useChat() {
 
   const setupSocketListeners = () => {
     // 清理舊監聽器
-    const events = [
-      'message_received',
-      'room_joined',
-      'user_joined',
-      'user_left',
-      'user_typing',
-      'user_stop_typing',
-      'online_users_updated',
-      'auth_error',
-    ]
+    const events = ['message_received', 'room_joined', 'auth_error']
     events.forEach((event) => socketStore.off(event))
 
     // 設定新監聽器
@@ -83,44 +72,10 @@ export function useChat() {
     })
 
     socketStore.on('room_joined', async (data) => {
-      if (data.messages) chatStore.setMessages(data.messages)
-      if (data.onlineUsers) chatStore.setOnlineUsers(data.onlineUsers)
-
       if (data.roomInfo) {
         updateRoomData(data.roomInfo)
       } else {
         await fetchRoomInfo(data.roomId)
-      }
-    })
-
-    socketStore.on('user_joined', (data) => {
-      if (currentRoom.value?.roomId === data.roomId) {
-        const newUsers = [...onlineUsers.value.filter((u) => u.userId !== data.userId), data]
-        chatStore.setOnlineUsers(newUsers)
-      }
-    })
-
-    socketStore.on('user_left', (data) => {
-      if (currentRoom.value?.roomId === data.roomId) {
-        chatStore.setOnlineUsers(onlineUsers.value.filter((u) => u.userId !== data.userId))
-      }
-    })
-
-    socketStore.on('user_typing', (data) => {
-      if (currentRoom.value?.roomId === data.roomId) {
-        chatStore.addTypingUser(data)
-      }
-    })
-
-    socketStore.on('user_stop_typing', (data) => {
-      if (currentRoom.value?.roomId === data.roomId) {
-        chatStore.removeTypingUser(data.userId)
-      }
-    })
-
-    socketStore.on('online_users_updated', (data) => {
-      if (currentRoom.value?.roomId === data.roomId) {
-        chatStore.setOnlineUsers(data.users || [])
       }
     })
 
@@ -173,7 +128,6 @@ export function useChat() {
       if (res.success) {
         updateRoomData(res.data)
         socketStore.joinRoom(roomId)
-        socketStore.getOnlineUsers(roomId)
         await getChatMessages(roomId, { page: 1, limit: 50 })
       }
     } catch (err) {
@@ -190,7 +144,6 @@ export function useChat() {
       if (res.success) {
         updateRoomData(res.data)
         socketStore.joinRoom(roomId)
-        socketStore.getOnlineUsers(roomId)
         await getChatMessages(roomId, { page: 1, limit: 50 })
         console.log('>>> joined room successfully:', roomId)
       }
@@ -206,7 +159,6 @@ export function useChat() {
     if (currentRoom.value) {
       console.log('>>> leaving current room:', currentRoom.value.roomId)
       socketStore.leaveRoom(currentRoom.value.roomId)
-      chatStore.clearTypingUsers()
     }
 
     if (room) {
@@ -231,36 +183,18 @@ export function useChat() {
   }
 
   // ======= 訊息操作 =======
-  const sendMessage = async (content, messageType = 'text', replyToId = null) => {
+  const sendMessage = async (content, messageType = 'text') => {
     console.log('>>> sendMessage called with content:', content)
     if (!currentRoom.value) throw new Error('沒有選擇聊天室')
     if (!content?.trim()) throw new Error('訊息內容不能為空')
 
     try {
-      socketStore.sendMessage(currentRoom.value.roomId, content.trim(), messageType, replyToId)
+      socketStore.sendMessage(currentRoom.value.roomId, content.trim(), messageType)
       console.log('>>> message sent via socket to roomId:', currentRoom.value.roomId)
       return { success: true }
     } catch (err) {
       console.error('>>> sendMessage error:', err)
       return { success: false, error: await handleApiError(err) }
-    }
-  }
-
-  const startTyping = () => {
-    if (currentRoom.value) {
-      socketStore.startTyping(currentRoom.value.roomId)
-    }
-  }
-
-  const stopTyping = () => {
-    if (currentRoom.value) {
-      socketStore.stopTyping(currentRoom.value.roomId)
-    }
-  }
-
-  const markMessagesAsRead = (messageIds = []) => {
-    if (currentRoom.value) {
-      socketStore.markMessagesRead(currentRoom.value.roomId, messageIds)
     }
   }
 
@@ -438,9 +372,6 @@ export function useChat() {
 
     // 訊息操作
     sendMessage,
-    startTyping,
-    stopTyping,
-    markMessagesAsRead,
     addMessage,
 
     // API 操作
@@ -458,8 +389,6 @@ export function useChat() {
     members,
     userRole,
     messages,
-    onlineUsers,
-    typingUsers,
     isLoading,
     error,
     hasChats,

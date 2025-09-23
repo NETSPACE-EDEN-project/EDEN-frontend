@@ -134,21 +134,8 @@ export const useSocketStore = defineStore('socket', () => {
       Swal.fire('認證錯誤', '請重新登入', 'error')
     })
 
-    // 自動轉發事件
-    const socketEvents = [
-      'new_message',
-      'user_joined_room',
-      'user_left_room',
-      'user_online',
-      'user_offline',
-      'user_typing',
-      'user_stop_typing',
-      'joined_room',
-      'left_room',
-      'online_users',
-      'messages_marked_read',
-      'notification',
-    ]
+    // 簡化的事件監聽 - 只保留基本功能
+    const socketEvents = ['new_message', 'joined_room', 'left_room', 'notification']
 
     socketEvents.forEach((event) => {
       socket.value.on(event, (response) => {
@@ -156,12 +143,8 @@ export const useSocketStore = defineStore('socket', () => {
           const mapEvent =
             {
               new_message: 'message_received',
-              user_joined_room: 'user_joined',
-              user_left_room: 'user_left',
               joined_room: 'room_joined',
               left_room: 'room_left',
-              online_users: 'online_users_updated',
-              messages_marked_read: 'messages_read',
             }[event] || event
 
           emitEvent(mapEvent, response.data)
@@ -220,29 +203,9 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   // ====== 訊息發送 ======
-  const sendMessage = (roomId, content, messageType = 'text', replyToId = null) => {
+  const sendMessage = (roomId, content, messageType = 'text') => {
     if (!canSendMessage.value) throw new Error('Socket 未連線')
-    socket.value.emit('send_message', { roomId, content, messageType, replyToId })
-  }
-
-  const startTyping = (roomId) => {
-    if (!canSendMessage.value) return
-    socket.value.emit('typing_start', { roomId })
-  }
-
-  const stopTyping = (roomId) => {
-    if (!canSendMessage.value) return
-    socket.value.emit('typing_stop', { roomId })
-  }
-
-  const getOnlineUsers = (roomId = null) => {
-    if (!canSendMessage.value) return
-    socket.value.emit('get_online_users', roomId ? { roomId } : {})
-  }
-
-  const markMessagesRead = (roomId, messageIds = []) => {
-    if (!canSendMessage.value) return
-    socket.value.emit('mark_messages_read', { roomId, messageIds })
+    socket.value.emit('send_message', { roomId, content, messageType })
   }
 
   // ====== 事件監聽 API ======
@@ -281,10 +244,6 @@ export const useSocketStore = defineStore('socket', () => {
 
     // 訊息發送
     sendMessage,
-    startTyping,
-    stopTyping,
-    getOnlineUsers,
-    markMessagesRead,
 
     // 事件監聽
     on,
