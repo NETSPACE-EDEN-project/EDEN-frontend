@@ -18,7 +18,7 @@ export const useSocketStore = defineStore('socket', () => {
     isConnected: isConnected.value,
     state: connectionState.value,
     attempts: reconnectAttempts.value,
-    socketId: socket.value?.id,
+    socketId: socket.value?.id || '',
   }))
 
   // ====== Socket connect ======

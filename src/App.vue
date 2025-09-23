@@ -3,8 +3,8 @@ import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from './stores/auth.js'
-import { useSocketStore } from './stores/socket.js'
 import { useAuth } from './composables/useAuth.js'
+import { useChat } from './composables/useChat.js'
 
 import Navbar from './components/Navbar.vue'
 import LoadingOverlay from './components/LoadingOverlay.vue'
@@ -12,8 +12,8 @@ import LoadingOverlay from './components/LoadingOverlay.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const socketStore = useSocketStore()
 const { verifyAuthStatus, checkTokenStatus } = useAuth()
+const chat = useChat()
 
 const showNavigation = computed(() => {
   const hideNavRoutes = ['/auth', '/login', '/register']
@@ -29,7 +29,6 @@ let tokenCheckInterval = null
 
 const startTokenCheckInterval = () => {
   if (tokenCheckInterval) return
-
   tokenCheckInterval = setInterval(
     async () => {
       if (authStore.isAuthenticated) {
@@ -58,7 +57,7 @@ const initializeApp = async () => {
     await verifyAuthStatus()
 
     if (authStore.isAuthenticated) {
-      await socketStore.connect()
+      await chat.initializeSocket()
       startTokenCheckInterval()
     }
   } catch (error) {
@@ -73,17 +72,10 @@ watch(
   () => authStore.isAuthenticated,
   async (newVal) => {
     if (newVal) {
+      await chat.initializeSocket()
       startTokenCheckInterval()
-      if (!socketStore.isConnected) {
-        try {
-          await socketStore.connect()
-        } catch (err) {
-          console.error('登入後自動連線失敗:', err)
-        }
-      }
     } else {
       stopTokenCheckInterval()
-      socketStore.disconnect()
     }
   },
 )

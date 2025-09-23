@@ -40,7 +40,10 @@ export function useChat() {
     console.log('>>> initializeSocket called')
     try {
       await socketStore.connect()
-      console.log('>>> socket connected:', socketStore.connectionStatus.value)
+
+      const status = socketStore.connectionStatus
+      console.log('>>> connectionStatus after connect:', status)
+
       setupSocketListeners()
 
       const savedRoomId = sessionStorage.getItem('currentRoomId')
