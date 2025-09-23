@@ -103,7 +103,6 @@ export const useSocketStore = defineStore('socket', () => {
     if (!socket.value) return
 
     socket.value.on('connect', () => {
-      console.log('Socket connected:', socket.value.id)
       isConnected.value = true
       connectionState.value = 'connected'
       reconnectAttempts.value = 0

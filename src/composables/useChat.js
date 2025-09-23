@@ -35,36 +35,31 @@ export function useChat() {
     return errorObj
   }
 
+  // ======= 已抓過房間資訊 Map =======
+  const fetchedRoomInfo = new Map()
+
   // ======= Socket 初始化 & 監聽 =======
   const initializeSocket = async () => {
-    console.log('>>> initializeSocket called')
     try {
       await socketStore.connect()
-
-      const status = socketStore.connectionStatus
-      console.log('>>> connectionStatus after connect:', status)
-
       setupSocketListeners()
 
       const savedRoomId = sessionStorage.getItem('currentRoomId')
       if (savedRoomId) {
-        console.log('>>> restoring room from sessionStorage:', savedRoomId)
         await restoreRoom(savedRoomId)
       }
 
       return true
     } catch (err) {
-      console.error('>>> Socket 初始化失敗:', err)
+      console.error('Socket 初始化失敗:', err)
       return false
     }
   }
 
   const setupSocketListeners = () => {
-    // 清理舊監聽器
     const events = ['message_received', 'room_joined', 'auth_error']
     events.forEach((event) => socketStore.off(event))
 
-    // 設定新監聽器
     socketStore.on('message_received', (data) => {
       if (currentRoom.value?.roomId === data.roomId) {
         chatStore.addMessage(data)
@@ -73,10 +68,15 @@ export function useChat() {
     })
 
     socketStore.on('room_joined', async (data) => {
+      const roomId = data.roomInfo?.id || data.roomId
+      if (fetchedRoomInfo.has(roomId)) return
+
       if (data.roomInfo) {
         updateRoomData(data.roomInfo)
+        fetchedRoomInfo.set(roomId, true)
       } else {
-        await fetchRoomInfo(data.roomId)
+        await fetchRoomInfo(roomId)
+        fetchedRoomInfo.set(roomId, true)
       }
     })
 
@@ -100,7 +100,6 @@ export function useChat() {
     chatStore.setMembers(roomMembers || roomData.members || [])
     chatStore.setUserRole(role || roomData.userRole || 'member')
 
-    // 設置當前房間基本資訊
     const roomInfo = room || roomData
     chatStore.setCurrentRoom({
       roomId: roomInfo.id || roomInfo.roomId,
@@ -112,10 +111,12 @@ export function useChat() {
   }
 
   const fetchRoomInfo = async (roomId) => {
+    if (fetchedRoomInfo.has(roomId)) return
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
       if (res.success) {
         updateRoomData(res.data)
+        fetchedRoomInfo.set(roomId, true)
       }
     } catch (err) {
       console.error('取得房間資訊失敗:', err)
@@ -125,8 +126,8 @@ export function useChat() {
   // ======= 房間操作 =======
   const restoreRoom = async (roomId) => {
     try {
-      await joinRoom(roomId) // 先抓 info
-      await joinRoomMessages(roomId) // 再抓訊息
+      await joinRoom(roomId)
+      await joinRoomMessages(roomId)
     } catch (err) {
       console.error('恢復房間失敗:', err)
       sessionStorage.removeItem('currentRoomId')
@@ -135,12 +136,14 @@ export function useChat() {
 
   const joinRoom = async (roomId) => {
     try {
-      // 只抓房間 info，不抓訊息
-      const res = await chatService.getRoomInfoAPI(roomId)
-      if (res.success) {
-        updateRoomData(res.data)
-        socketStore.joinRoom(roomId)
+      if (!fetchedRoomInfo.has(roomId)) {
+        const res = await chatService.getRoomInfoAPI(roomId)
+        if (res.success) {
+          updateRoomData(res.data)
+          fetchedRoomInfo.set(roomId, true)
+        }
       }
+      socketStore.joinRoom(roomId)
     } catch (err) {
       console.error('>>> joinRoom error:', err)
       throw err
@@ -185,16 +188,13 @@ export function useChat() {
 
   // ======= 訊息操作 =======
   const sendMessage = async (content, messageType = 'text') => {
-    console.log('>>> sendMessage called with content:', content)
     if (!currentRoom.value) throw new Error('沒有選擇聊天室')
     if (!content?.trim()) throw new Error('訊息內容不能為空')
 
     try {
       socketStore.sendMessage(currentRoom.value.roomId, content.trim(), messageType)
-      console.log('>>> message sent via socket to roomId:', currentRoom.value.roomId)
       return { success: true }
     } catch (err) {
-      console.error('>>> sendMessage error:', err)
       return { success: false, error: await handleApiError(err) }
     }
   }
@@ -209,11 +209,8 @@ export function useChat() {
     chatStore.clearError()
     try {
       const res = await chatService.getChatListAPI()
-      if (res.success) {
-        chatStore.setChatList(res.data.chatrooms)
-      } else {
-        await Swal.fire('載入失敗', res.message || '無法載入聊天列表', 'error')
-      }
+      if (res.success) chatStore.setChatList(res.data.chatrooms)
+      else await Swal.fire('載入失敗', res.message || '無法載入聊天列表', 'error')
       return res
     } catch (err) {
       return handleApiError(err)
@@ -223,17 +220,13 @@ export function useChat() {
   }
 
   const searchUsers = async (keyword) => {
-    if (!keyword?.trim()) {
-      return handleApiError({ message: '請輸入搜尋關鍵字' })
-    }
+    if (!keyword?.trim()) return handleApiError({ message: '請輸入搜尋關鍵字' })
 
     chatStore.setLoading(true)
     chatStore.clearError()
     try {
       const res = await chatService.searchUsersAPI(keyword.trim())
-      if (!res.success) {
-        await Swal.fire('搜尋失敗', res.message || '搜尋用戶失敗', 'error')
-      }
+      if (!res.success) await Swal.fire('搜尋失敗', res.message || '搜尋用戶失敗', 'error')
       return res
     } catch (err) {
       return handleApiError(err)
@@ -243,9 +236,7 @@ export function useChat() {
   }
 
   const startPrivateChat = async (targetUserId) => {
-    if (!targetUserId) {
-      return handleApiError({ message: '請選擇聊天對象' })
-    }
+    if (!targetUserId) return handleApiError({ message: '請選擇聊天對象' })
 
     chatStore.setLoading(true)
     chatStore.clearError()
@@ -253,7 +244,6 @@ export function useChat() {
       const res = await chatService.startPrivateChatAPI(targetUserId)
       if (res.success) {
         await Swal.fire('成功', res.message || '私人聊天室創建成功', 'success')
-        // 自動跳轉到新創建的聊天室
         if (res.data.roomId) {
           await setCurrentRoom({
             roomId: res.data.roomId,
@@ -272,12 +262,8 @@ export function useChat() {
   }
 
   const createGroupChat = async (groupData) => {
-    if (!groupData.groupName?.trim()) {
-      return handleApiError({ message: '請輸入群組名稱' })
-    }
-    if (!groupData.memberIds?.length) {
-      return handleApiError({ message: '請至少選擇一個成員' })
-    }
+    if (!groupData.groupName?.trim()) return handleApiError({ message: '請輸入群組名稱' })
+    if (!groupData.memberIds?.length) return handleApiError({ message: '請至少選擇一個成員' })
 
     chatStore.setLoading(true)
     chatStore.clearError()
@@ -285,7 +271,6 @@ export function useChat() {
       const res = await chatService.createGroupChatAPI(groupData)
       if (res.success) {
         await Swal.fire('成功', res.message || '群組聊天室創建成功', 'success')
-        // 自動跳轉到新創建的群組
         if (res.data.roomId) {
           await setCurrentRoom({
             roomId: res.data.roomId,
@@ -304,24 +289,16 @@ export function useChat() {
   }
 
   const getChatMessages = async (roomId, options = {}) => {
-    if (!roomId) {
-      return handleApiError({ message: '房間ID不能為空' })
-    }
+    if (!roomId) return handleApiError({ message: '房間ID不能為空' })
 
     chatStore.setLoading(true)
     chatStore.clearError()
     try {
       const res = await chatService.getChatMessagesAPI(roomId, options)
       if (res.success) {
-        if (options.page === 1) {
-          chatStore.setMessages(res.data.messages)
-        } else {
-          chatStore.prependMessages(res.data.messages)
-        }
-        return {
-          messages: res.data.messages,
-          pagination: res.data.pagination,
-        }
+        if (options.page === 1) chatStore.setMessages(res.data.messages)
+        else chatStore.prependMessages(res.data.messages)
+        return { messages: res.data.messages, pagination: res.data.pagination }
       } else {
         await Swal.fire('載入失敗', res.message || '載入訊息失敗', 'error')
       }
@@ -333,19 +310,14 @@ export function useChat() {
   }
 
   const getRoomInfo = async (roomId) => {
-    if (!roomId) {
-      return handleApiError({ message: '房間ID不能為空' })
-    }
+    if (!roomId) return handleApiError({ message: '房間ID不能為空' })
 
     chatStore.setLoading(true)
     chatStore.clearError()
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
-      if (res.success) {
-        updateRoomData(res.data)
-      } else {
-        await Swal.fire('載入失敗', res.message || '載入房間資訊失敗', 'error')
-      }
+      if (res.success) updateRoomData(res.data)
+      else await Swal.fire('載入失敗', res.message || '載入房間資訊失敗', 'error')
       return res
     } catch (err) {
       return handleApiError(err)

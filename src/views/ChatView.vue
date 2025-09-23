@@ -53,11 +53,11 @@ const handleChatSelected = (chat) => {
 }
 
 onMounted(async () => {
-  const authResult = await verifyAuthStatus()
-  if (!authResult.success) {
+  if (!isAuthenticated.value) {
     router.push('/auth')
     return
   }
+
   await nextTick()
 
   if (isMobile.value) {
