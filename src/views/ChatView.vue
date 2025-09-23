@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { useChat } from '../composables/useChat.js'
+import { useAuthStore } from '../stores/auth.js'
 
 import ChatSidebar from '../components/chat/ChatSidebar.vue'
 import ChatMainArea from '../components/chat/ChatMainArea.vue'
@@ -10,6 +11,7 @@ import SearchUserModal from '../components/chat/SearchUserModal.vue'
 import CreateGroupModal from '../components/chat/CreateGroupModal.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const { isAuthenticated } = useAuth()
 const {
   chatList,
@@ -46,7 +48,7 @@ const handleChatSelected = (chat) => {
   if (isMobile.value) showSidebar.value = false
 }
 
-onMounted(async () => {
+const initializeChatView = async () => {
   if (!isAuthenticated.value) {
     router.push('/auth')
     return
@@ -54,6 +56,20 @@ onMounted(async () => {
 
   if (isMobile.value) showSidebar.value = false
   await loadChatList()
+}
+
+// 監聽認證狀態變化
+watch(
+  () => authStore.isReady,
+  (isReady) => {
+    if (isReady) {
+      initializeChatView()
+    }
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
