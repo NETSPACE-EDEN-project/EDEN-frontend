@@ -10,7 +10,7 @@ export const useSocketStore = defineStore('socket', () => {
   const reconnectAttempts = ref(0)
   const maxReconnectAttempts = ref(5)
   const currentRoomId = ref(null)
-  const eventListeners = new Map() // 移除 reactive，因為不需要響應式
+  const eventListeners = new Map()
 
   const canSendMessage = computed(() => isConnected.value && socket.value)
 
@@ -21,7 +21,7 @@ export const useSocketStore = defineStore('socket', () => {
     socketId: socket.value?.id || '',
   }))
 
-  // ====== Socket connect ======
+  // Socket connect
   const connect = async (
     url = import.meta.env.VITE_WS_URL || 'http://localhost:3000',
     options = {},
@@ -82,7 +82,7 @@ export const useSocketStore = defineStore('socket', () => {
     }
   }
 
-  // ====== 統一事件轉發 ======
+  // 統一事件轉發
   const emitEvent = (event, data) => {
     if (eventListeners.has(event)) {
       eventListeners.get(event).forEach((callback) => {
@@ -129,11 +129,10 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on('error', (error) => {
       console.error('Socket error:', error)
       emitEvent('auth_error', error)
-      // 認證錯誤的 Swal 提示
       Swal.fire('認證錯誤', '請重新登入', 'error')
     })
 
-    // 簡化的事件監聽 - 只保留基本功能
+    // 事件監聽
     const socketEvents = ['new_message', 'joined_room', 'left_room', 'notification']
 
     socketEvents.forEach((event) => {
@@ -152,7 +151,7 @@ export const useSocketStore = defineStore('socket', () => {
     })
   }
 
-  // ====== 連線管理 ======
+  // 連線管理
   const disconnect = () => {
     if (socket.value) socket.value.disconnect()
     socket.value = null
@@ -184,7 +183,7 @@ export const useSocketStore = defineStore('socket', () => {
     }, delay)
   }
 
-  // ====== 房間管理 ======
+  // 房間管理
   const joinRoom = (roomId) => {
     if (!canSendMessage.value) throw new Error('Socket 未連線')
     socket.value.emit('join_room', { roomId })
@@ -201,13 +200,13 @@ export const useSocketStore = defineStore('socket', () => {
     }
   }
 
-  // ====== 訊息發送 ======
+  // 訊息發送
   const sendMessage = (roomId, content, messageType = 'text') => {
     if (!canSendMessage.value) throw new Error('Socket 未連線')
     socket.value.emit('send_message', { roomId, content, messageType })
   }
 
-  // ====== 事件監聽 API ======
+  // 事件監聽 API
   const on = (event, callback) => {
     if (!eventListeners.has(event)) eventListeners.set(event, new Set())
     eventListeners.get(event).add(callback)
@@ -250,7 +249,7 @@ export const useSocketStore = defineStore('socket', () => {
     offAll,
     emit: emitEvent,
 
-    // 內部方法（如果需要的話）
+    // 內部方法
     setupEventListeners,
   }
 })

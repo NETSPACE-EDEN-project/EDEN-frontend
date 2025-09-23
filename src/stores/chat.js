@@ -9,7 +9,6 @@ export const useChatStore = defineStore('chat', () => {
   const userRole = ref(null)
 
   const messages = ref([])
-  const notifications = ref([])
 
   const messagePagination = ref({
     current: 1,
@@ -26,7 +25,7 @@ export const useChatStore = defineStore('chat', () => {
   const hasChats = computed(() => chatList.value.length > 0)
   const isGroupChat = computed(() => currentRoom.value?.roomType === 'group')
 
-  // ======= 聊天列表 / 房間 =======
+  // 聊天列表
   const setChatList = (list) => {
     chatList.value = list
   }
@@ -43,7 +42,7 @@ export const useChatStore = defineStore('chat', () => {
   const setMembers = (list) => (members.value = list)
   const setUserRole = (role) => (userRole.value = role)
 
-  // ======= 訊息 =======
+  // 訊息
   const setMessages = (list) => {
     messages.value = list
   }
@@ -64,7 +63,7 @@ export const useChatStore = defineStore('chat', () => {
       (m) =>
         m.content === msg.content &&
         m.senderId === msg.senderId &&
-        Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000, // 1秒內
+        Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000,
     )
 
     if (!isDuplicate) {
@@ -86,7 +85,7 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
-  // ======= 分頁 =======
+  // 分頁
   const setMessagePagination = (pagination) => {
     messagePagination.value = {
       ...pagination,
@@ -100,37 +99,12 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  // ======= 通知系統 =======
-  const addNotification = (notification) => {
-    const newNotification = {
-      id: Date.now() + Math.random(),
-      timestamp: new Date(),
-      read: false,
-      ...notification,
-    }
-    notifications.value.unshift(newNotification)
-
-    // 限制通知數量
-    if (notifications.value.length > 100) {
-      notifications.value = notifications.value.slice(0, 100)
-    }
-  }
-
-  const markNotificationAsRead = (notificationId) => {
-    const notification = notifications.value.find((n) => n.id === notificationId)
-    if (notification) {
-      notification.read = true
-    }
-  }
-
-  const clearNotifications = () => (notifications.value = [])
-
-  // ======= Loading / Error =======
+  // Loading / Error
   const setLoading = (loading) => (isLoading.value = loading)
   const setError = (err) => (error.value = err)
   const clearError = () => (error.value = null)
 
-  // ======= 清除聊天室資料 =======
+  // 清除聊天室資料
   const clearChatData = () => {
     currentRoom.value = null
     roomInfo.value = null
@@ -150,7 +124,6 @@ export const useChatStore = defineStore('chat', () => {
   const reset = () => {
     chatList.value = []
     clearChatData()
-    notifications.value = []
   }
 
   return {
@@ -161,7 +134,6 @@ export const useChatStore = defineStore('chat', () => {
     members,
     userRole,
     messages,
-    notifications,
     messagePagination,
     isLoading,
     error,
@@ -185,9 +157,6 @@ export const useChatStore = defineStore('chat', () => {
     updateLastMessage,
     setMessagePagination,
     incrementMessagePage,
-    addNotification,
-    markNotificationAsRead,
-    clearNotifications,
     setLoading,
     setError,
     clearError,

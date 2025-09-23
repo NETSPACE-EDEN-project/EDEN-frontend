@@ -71,7 +71,6 @@ export const useAuthStore = defineStore('auth', () => {
     return '用戶'
   })
 
-  // 修復 userId 計算邏輯
   const userId = computed(() => {
     if (user.value?.id) return user.value.id
 

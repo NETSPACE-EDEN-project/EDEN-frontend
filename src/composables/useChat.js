@@ -22,7 +22,7 @@ export function useChat() {
 
   const { isConnected, connectionState, connectionStatus } = storeToRefs(socketStore)
 
-  // ======= 通用錯誤處理 =======
+  // 錯誤處理
   const handleApiError = async (err) => {
     console.error('API 呼叫失敗', err)
     const errorObj = err.response?.data || {
@@ -35,10 +35,9 @@ export function useChat() {
     return errorObj
   }
 
-  // ======= 已抓過房間資訊 Map =======
   const fetchedRoomInfo = new Map()
 
-  // ======= Socket 初始化 & 監聽 =======
+  //  Socket 初始化 & 監聽
   const initializeSocket = async () => {
     try {
       await socketStore.connect()
@@ -92,7 +91,7 @@ export function useChat() {
     socketStore.disconnect()
   }
 
-  // ======= 房間數據更新 =======
+  // 房間數據更新
   const updateRoomData = (roomData) => {
     const { room, members: roomMembers, userRole: role } = roomData
 
@@ -123,7 +122,7 @@ export function useChat() {
     }
   }
 
-  // ======= 房間操作 =======
+  // 房間操作
   const restoreRoom = async (roomId) => {
     try {
       await joinRoom(roomId)
@@ -186,7 +185,7 @@ export function useChat() {
     sessionStorage.removeItem('currentRoomId')
   }
 
-  // ======= 訊息操作 =======
+  // 訊息操作
   const sendMessage = async (content, messageType = 'text') => {
     if (!currentRoom.value) throw new Error('沒有選擇聊天室')
     if (!content?.trim()) throw new Error('訊息內容不能為空')
@@ -203,7 +202,7 @@ export function useChat() {
     chatStore.addMessage(message)
   }
 
-  // ======= API 操作 =======
+  // API 操作
   const getChatList = async () => {
     chatStore.setLoading(true)
     chatStore.clearError()

@@ -152,13 +152,11 @@ export function useAuth() {
         }
         return res
       } else {
-        // 認證失敗時清除本地狀態
         authStore.clearAuth()
         authStore.setError(res)
         return res
       }
     } catch (err) {
-      // 網路錯誤時也清除認證狀態
       authStore.clearAuth()
       return handleApiError(err)
     } finally {

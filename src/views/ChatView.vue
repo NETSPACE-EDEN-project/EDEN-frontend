@@ -13,16 +13,7 @@ import CreateGroupModal from '../components/chat/CreateGroupModal.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const { isAuthenticated } = useAuth()
-const {
-  chatList,
-  currentRoom,
-  messages,
-  isLoading,
-  getChatList,
-  setCurrentRoom,
-  addMessage,
-  clearChatData,
-} = useChat()
+const { getChatList, clearChatData } = useChat()
 
 const showSidebar = ref(true)
 const showUserSearch = ref(false)
