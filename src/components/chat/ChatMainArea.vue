@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, nextTick, watch } from 'vue'
+import { computed, ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useChat } from '../../composables/useChat.js'
 
 import ChatHeader from './ChatHeader.vue'
@@ -13,11 +13,13 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-sidebar'])
 
-const { currentRoom, messages } = useChat()
+const { currentRoom, messages, messagePagination, getChatMessages, incrementMessagePage } =
+  useChat()
 const hasCurrentRoom = computed(() => !!currentRoom.value)
 
-// 直接引用滾動容器
+// 滾動容器
 const scrollContainer = ref(null)
+const isFetching = ref(false)
 
 // 滾動到底部
 const scrollToBottom = async () => {
@@ -27,11 +29,45 @@ const scrollToBottom = async () => {
   }
 }
 
+// 上拉載入更多歷史訊息
+const handleScroll = async () => {
+  const el = scrollContainer.value
+  if (!el || !currentRoom.value || !messagePagination.value) return
+
+  if (el.scrollTop === 0 && messagePagination.value.hasMore) {
+    isFetching.value = true
+    const previousHeight = el.scrollHeight
+
+    const { pagination } = await getChatMessages(currentRoom.value.roomId, {
+      page: messagePagination.value.current + 1,
+      limit: messagePagination.value.limit,
+    })
+
+    incrementMessagePage(pagination)
+
+    await nextTick()
+    el.scrollTop = el.scrollHeight - previousHeight
+
+    isFetching.value = false
+  }
+}
 // 監聽訊息變化
 watch(messages, scrollToBottom, { deep: true })
 
 // 監聽房間變化
 watch(currentRoom, scrollToBottom)
+
+onMounted(() => {
+  if (scrollContainer.value) {
+    scrollContainer.value.addEventListener('scroll', handleScroll)
+  }
+})
+
+onUnmounted(() => {
+  if (scrollContainer.value) {
+    scrollContainer.value.removeEventListener('scroll', handleScroll)
+  }
+})
 </script>
 
 <template>
@@ -48,6 +84,7 @@ watch(currentRoom, scrollToBottom)
       @toggle-sidebar="emit('toggle-sidebar')"
     />
 
+    <!-- 訊息列表 -->
     <div ref="scrollContainer" class="flex-1 p-4 mt-2 overflow-y-auto bg-gray-50">
       <MessageList :is-mobile="isMobile" />
     </div>

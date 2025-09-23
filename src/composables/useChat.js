@@ -18,6 +18,7 @@ export function useChat() {
     isLoading,
     error,
     hasChats,
+    messagePagination,
   } = storeToRefs(chatStore)
 
   const { isConnected, connectionState, connectionStatus } = storeToRefs(socketStore)
@@ -295,8 +296,12 @@ export function useChat() {
     try {
       const res = await chatService.getChatMessagesAPI(roomId, options)
       if (res.success) {
-        if (options.page === 1) chatStore.setMessages(res.data.messages)
-        else chatStore.prependMessages(res.data.messages)
+        if (options.page === 1) {
+          chatStore.setMessages(res.data.messages)
+        } else {
+          chatStore.prependMessages(res.data.messages)
+        }
+        chatStore.setMessagePagination(res.data.pagination)
         return { messages: res.data.messages, pagination: res.data.pagination }
       } else {
         await Swal.fire('載入失敗', res.message || '載入訊息失敗', 'error')
@@ -322,6 +327,14 @@ export function useChat() {
       return handleApiError(err)
     } finally {
       chatStore.setLoading(false)
+    }
+  }
+
+  const incrementMessagePage = (pagination) => {
+    if (pagination) {
+      messagePagination.value = pagination
+    } else {
+      messagePagination.value.current += 1
     }
   }
 
@@ -364,5 +377,7 @@ export function useChat() {
     isLoading,
     error,
     hasChats,
+    messagePagination,
+    incrementMessagePage,
   }
 }
