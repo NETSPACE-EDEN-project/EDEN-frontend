@@ -1,4 +1,3 @@
-// composables/useChat.js
 import Swal from 'sweetalert2'
 import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chat.js'
@@ -9,7 +8,6 @@ export function useChat() {
   const chatStore = useChatStore()
   const socketStore = useSocketStore()
 
-  // Store 狀態
   const {
     chatList,
     currentRoom,
@@ -137,15 +135,12 @@ export function useChat() {
   }
 
   const joinRoom = async (roomId) => {
-    console.log('>>> joinRoom called for roomId:', roomId)
     try {
       const res = await chatService.getRoomInfoAPI(roomId)
-      console.log('>>> getRoomInfoAPI response:', res)
       if (res.success) {
         updateRoomData(res.data)
         socketStore.joinRoom(roomId)
         await getChatMessages(roomId, { page: 1, limit: 50 })
-        console.log('>>> joined room successfully:', roomId)
       }
     } catch (err) {
       console.error('>>> joinRoom error:', err)
@@ -154,23 +149,17 @@ export function useChat() {
   }
 
   const setCurrentRoom = async (room) => {
-    console.log('>>> setCurrentRoom called with room:', room)
-
     if (currentRoom.value) {
-      console.log('>>> leaving current room:', currentRoom.value.roomId)
       socketStore.leaveRoom(currentRoom.value.roomId)
     }
 
     if (room) {
-      console.log('>>> joining new room:', room.roomId)
       await joinRoom(room.roomId)
       sessionStorage.setItem('currentRoomId', room.roomId)
-      console.log('>>> currentRoom after join:', currentRoom.value)
     } else {
       chatStore.setCurrentRoom(null)
       chatStore.clearChatData()
       sessionStorage.removeItem('currentRoomId')
-      console.log('>>> cleared current room')
     }
   }
 

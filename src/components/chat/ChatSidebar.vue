@@ -25,8 +25,7 @@ const { chatList, setCurrentRoom, getChatMessages, isLoading, clearChatData } = 
 
 const selectChat = async (chatroom) => {
   clearChatData()
-  setCurrentRoom(chatroom)
-  await getChatMessages(chatroom.roomId)
+  await setCurrentRoom(chatroom)
   emit('chat-selected', chatroom)
 }
 </script>
