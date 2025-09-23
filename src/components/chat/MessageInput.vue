@@ -3,9 +3,10 @@ import { ref, computed } from 'vue'
 import { useAuth } from '../../composables/useAuth.js'
 import { useChat } from '../../composables/useChat.js'
 
-const { userName } = useAuth()
-const { currentRoom, addMessage } = useChat()
+const { userId, userName } = useAuth()
+const { currentRoom, sendMessage, addMessage } = useChat()
 
+const isSending = ref(false)
 const messageInput = ref('')
 
 // 判斷是否可送出
@@ -14,31 +15,38 @@ const canSendMessage = computed(() => {
 })
 
 // 送出訊息
-const sendMessage = async () => {
-  if (!canSendMessage.value) return
+const sendMessageHandler = async () => {
+  if (!canSendMessage.value || isSending.value) return
 
-  const messageText = messageInput.value.trim()
+  isSending.value = true
+  const content = messageInput.value.trim()
   messageInput.value = ''
 
-  const newMessage = {
+  // 前端先加到 store
+  const tempMessage = {
     id: Date.now(),
-    content: messageText,
+    content,
     senderId: userId.value,
     senderName: userName.value,
     createdAt: new Date().toISOString(),
     messageType: 'text',
   }
+  addMessage(tempMessage)
 
-  addMessage(newMessage)
+  // 發送到後端
+  const res = await sendMessage(content)
+  if (!res.success) {
+    // 可回滾或提示錯誤
+  }
 
-  // TODO: 發送到後端 WebSocket 或 API
+  isSending.value = false
 }
 
 // Enter 發送
 const handleKeyDown = (event) => {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
-    sendMessage()
+    sendMessageHandler()
   }
 }
 </script>
@@ -56,8 +64,8 @@ const handleKeyDown = (event) => {
         />
       </div>
       <button
-        @click="sendMessage"
-        :disabled="!canSendMessage"
+        @click="sendMessageHandler"
+        :disabled="!canSendMessage || isSending"
         :class="[
           'px-4 py-2 rounded-lg font-medium transition-colors',
           canSendMessage
