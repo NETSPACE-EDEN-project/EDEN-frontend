@@ -10,7 +10,7 @@ import SearchUserModal from '../components/chat/SearchUserModal.vue'
 import CreateGroupModal from '../components/chat/CreateGroupModal.vue'
 
 const router = useRouter()
-const { isAuthenticated, verifyAuthStatus } = useAuth()
+const { isAuthenticated } = useAuth()
 const {
   chatList,
   currentRoom,
@@ -31,11 +31,7 @@ const isMobile = computed(() => windowWidth.value < 768)
 
 const handleResize = () => {
   windowWidth.value = window.innerWidth
-  if (windowWidth.value >= 768) {
-    showSidebar.value = true
-  } else {
-    showSidebar.value = false
-  }
+  showSidebar.value = windowWidth.value >= 768
 }
 
 const toggleSidebar = () => {
@@ -47,9 +43,7 @@ const loadChatList = async () => {
 }
 
 const handleChatSelected = (chat) => {
-  if (isMobile.value) {
-    showSidebar.value = false
-  }
+  if (isMobile.value) showSidebar.value = false
 }
 
 onMounted(async () => {
@@ -58,12 +52,7 @@ onMounted(async () => {
     return
   }
 
-  await nextTick()
-
-  if (isMobile.value) {
-    showSidebar.value = false
-  }
-
+  if (isMobile.value) showSidebar.value = false
   await loadChatList()
   window.addEventListener('resize', handleResize)
 })
@@ -88,7 +77,6 @@ onUnmounted(() => {
   />
 
   <div class="flex h-screen overflow-hidden bg-transparent">
-    <!-- 側邊欄 -->
     <ChatSidebar
       :show="showSidebar"
       :is-mobile="isMobile"
@@ -99,9 +87,7 @@ onUnmounted(() => {
       @reload-chats="loadChatList"
     />
 
-    <!-- 主要內容區域 -->
     <div class="flex flex-col flex-1 bg-transparent">
-      <!-- 移動端左側切換按鈕 -->
       <button
         v-if="isMobile"
         @click="toggleSidebar"
@@ -119,7 +105,6 @@ onUnmounted(() => {
         </svg>
       </button>
 
-      <!-- 主聊天內容 -->
       <ChatMainArea
         :is-mobile="isMobile"
         :show-sidebar="showSidebar"
@@ -128,7 +113,6 @@ onUnmounted(() => {
       />
     </div>
 
-    <!-- 移動端側邊欄遮罩 -->
     <div
       v-if="isMobile && showSidebar"
       @click="showSidebar = false"
