@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, nextTick, watch } from 'vue'
 import { useChat } from '../../composables/useChat.js'
 
 import ChatHeader from './ChatHeader.vue'
@@ -13,8 +13,25 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-sidebar'])
 
-const { currentRoom } = useChat()
+const { currentRoom, messages } = useChat()
 const hasCurrentRoom = computed(() => !!currentRoom.value)
+
+// 直接引用滾動容器
+const scrollContainer = ref(null)
+
+// 滾動到底部
+const scrollToBottom = async () => {
+  await nextTick()
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
+  }
+}
+
+// 監聽訊息變化
+watch(messages, scrollToBottom, { deep: true })
+
+// 監聽房間變化
+watch(currentRoom, scrollToBottom)
 </script>
 
 <template>
@@ -31,13 +48,12 @@ const hasCurrentRoom = computed(() => !!currentRoom.value)
       @toggle-sidebar="emit('toggle-sidebar')"
     />
 
-    <!-- 訊息滾動區域 -->
-    <div class="flex-1 p-4 mt-2 overflow-y-auto bg-gray-50">
+    <div ref="scrollContainer" class="flex-1 p-4 mt-2 overflow-y-auto bg-gray-50">
       <MessageList :is-mobile="isMobile" />
     </div>
 
     <!-- 輸入框固定底部 -->
-    <div class="z-10 border-t border-gray-200 bg-white/50">
+    <div v-if="currentRoom" class="z-10 border-t border-gray-200 bg-white/50">
       <MessageInput />
     </div>
   </div>

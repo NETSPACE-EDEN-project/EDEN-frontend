@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { computed } from 'vue'
 import { useAuth } from '../../composables/useAuth.js'
 import { useChat } from '../../composables/useChat.js'
 
@@ -9,28 +9,11 @@ import MessageItem from './MessageItem.vue'
 const { userId } = useAuth()
 const { currentRoom, messages } = useChat()
 
-const messagesContainer = ref(null)
-
-// 計算當前用戶ID
 const currentUserId = computed(() => userId.value)
-
-// 自動滾動到底部
-const scrollToBottom = async () => {
-  await nextTick()
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-  }
-}
-
-// 監聽消息變化
-watch(messages, () => scrollToBottom(), { deep: true })
-
-// 監聽聊天室變化
-watch(currentRoom, () => scrollToBottom())
 </script>
 
 <template>
-  <div ref="messagesContainer" class="flex flex-col flex-1 p-4 overflow-y-auto bg-gray-50">
+  <div class="flex flex-col flex-1">
     <!-- 未選聊天室 -->
     <div v-if="!currentRoom" class="flex items-center justify-center flex-1 text-gray-500">
       <ChatEmptyState text="請選擇一個聊天室開始對話" />

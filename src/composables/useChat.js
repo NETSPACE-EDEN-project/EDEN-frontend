@@ -125,12 +125,8 @@ export function useChat() {
   // ======= 房間操作 =======
   const restoreRoom = async (roomId) => {
     try {
-      const res = await chatService.getRoomInfoAPI(roomId)
-      if (res.success) {
-        updateRoomData(res.data)
-        socketStore.joinRoom(roomId)
-        await getChatMessages(roomId, { page: 1, limit: 50 })
-      }
+      await joinRoom(roomId) // 先抓 info
+      await joinRoomMessages(roomId) // 再抓訊息
     } catch (err) {
       console.error('恢復房間失敗:', err)
       sessionStorage.removeItem('currentRoomId')
@@ -139,16 +135,21 @@ export function useChat() {
 
   const joinRoom = async (roomId) => {
     try {
+      // 只抓房間 info，不抓訊息
       const res = await chatService.getRoomInfoAPI(roomId)
       if (res.success) {
         updateRoomData(res.data)
         socketStore.joinRoom(roomId)
-        await getChatMessages(roomId, { page: 1, limit: 50 })
       }
     } catch (err) {
       console.error('>>> joinRoom error:', err)
       throw err
     }
+  }
+
+  const joinRoomMessages = async (roomId, options = { page: 1, limit: 50 }) => {
+    socketStore.joinRoom(roomId)
+    await getChatMessages(roomId, options)
   }
 
   const setCurrentRoom = async (room) => {
@@ -157,8 +158,16 @@ export function useChat() {
     }
 
     if (room) {
-      await joinRoom(room.roomId)
+      chatStore.setCurrentRoom({
+        roomId: room.roomId,
+        roomName: room.roomName,
+        roomType: room.roomType,
+        isGroup: room.isGroup || room.roomType === 'group',
+        memberCount: room.memberCount || 0,
+      })
+
       sessionStorage.setItem('currentRoomId', room.roomId)
+      await joinRoomMessages(room.roomId)
     } else {
       chatStore.setCurrentRoom(null)
       chatStore.clearChatData()
