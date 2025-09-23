@@ -28,6 +28,7 @@ const showSidebar = ref(true)
 const showUserSearch = ref(false)
 const showCreateGroup = ref(false)
 const windowWidth = ref(window.innerWidth)
+const hasInitialized = ref(false)
 
 const isMobile = computed(() => windowWidth.value < 768)
 
@@ -49,28 +50,34 @@ const handleChatSelected = (chat) => {
 }
 
 const initializeChatView = async () => {
+  if (hasInitialized.value) return
+
   if (!isAuthenticated.value) {
     router.push('/auth')
     return
   }
 
+  hasInitialized.value = true
   if (isMobile.value) showSidebar.value = false
   await loadChatList()
 }
 
 // 監聽認證狀態變化
 watch(
-  () => authStore.isReady,
-  (isReady) => {
-    if (isReady) {
-      initializeChatView()
+  () => authStore.isLoading,
+  async (loading) => {
+    if (loading === false && !hasInitialized.value) {
+      await initializeChatView()
     }
   },
-  { immediate: true },
 )
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
+
+  if (!authStore.isLoading) {
+    await initializeChatView()
+  }
 })
 
 onUnmounted(() => {
