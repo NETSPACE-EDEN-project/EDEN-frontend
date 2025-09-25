@@ -64,7 +64,7 @@ const getInitial = (type) => {
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-medium text-gray-900 truncate">
-            {{ chatroom.roomName || '未命名聊天' }}
+            {{ chatroom.displayName || '未命名聊天' }}
           </h3>
           <span class="text-xs text-gray-500">
             {{ formatLastMessageTime(chatroom.lastMessageAt) }}
